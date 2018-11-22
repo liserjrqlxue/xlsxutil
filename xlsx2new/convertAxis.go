@@ -10,12 +10,16 @@ func positionToAxis(row, col int) string {
 		return ""
 	}
 	rowString := strconv.Itoa(row + 1)
-	colString := ""
-	col++
+	colString := string('A' + col%26)
+	//if col>26{
+	col /= 26
 	for col > 0 {
-		colString = string('A'+(col-1)%26) + colString
+		col -= 1
+		colString = string('A'+col%26) + colString
 		col /= 26
 	}
+	//}
+
 	return colString + rowString
 }
 
