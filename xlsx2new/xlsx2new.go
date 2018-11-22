@@ -3,36 +3,51 @@ package main
 import (
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"os"
+	"sort"
 )
 
 func main() {
-	xlsx := excelize.NewFile()
-	// 创建一个工作表
-	index := xlsx.NewSheet("Sheet2")
-	// 设置单元格的值
-	xlsx.SetCellValue("Sheet2", "A2", "Hello word.")
-	xlsx.SetCellValue("Sheet1", "B2", 100)
-	// 设置工作簿的默认工作表
-	xlsx.SetActiveSheet(index)
-	// 根据指定路径保存文件
-	err := xlsx.SaveAs("./Book1.xlsx")
-	checkError(err)
-
-	inputXlsx, err := excelize.OpenFile("./Book1.xlsx")
-	checkError(err)
-	// 获取工作表中指定单元格的值
-	cell := inputXlsx.GetCellValue("Sheet1", "B2")
-	fmt.Println(cell)
-	// 获取Sheet1上所有单元格
-	rows := inputXlsx.GetRows("Sheet1")
-	for i, row := range rows {
-
-		fmt.Print("row:", i, "\t[")
-		for _, cell := range row {
-			fmt.Print(cell, "]\t[")
-		}
-		fmt.Println("]")
+	var inputXlsxPath, outputPrefix string
+	if len(os.Args) > 2 {
+		inputXlsxPath = os.Args[1]
+		outputPrefix = os.Args[2]
+	} else {
+		fmt.Println(os.Args[0], "input.xlsx", "outputPrefix")
+		os.Exit(1)
 	}
+
+	// 读取input.xlsx
+	inputXlsx, err := excelize.OpenFile(inputXlsxPath)
+	checkError(err)
+
+	// 生成新excel
+	outputXlsx := excelize.NewFile()
+
+	// 复制工作表
+	// 便利input.xlsx的工作表
+	sheetMap := inputXlsx.GetSheetMap()
+	var keys []int
+	for k := range sheetMap {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	for _, k := range keys {
+		name := inputXlsx.GetSheetName(k)
+		fmt.Printf("Copy sheet %d [%s]\n", k, name)
+		inputRows := inputXlsx.GetRows(name)
+		outputXlsx.NewSheet(name)
+		for i, row := range inputRows {
+			for j, cell := range row {
+				axis := positionToAxis(i, j)
+				outputXlsx.SetCellValue(name, axis, cell)
+			}
+		}
+	}
+	// 保存到 outputPrefix.xlsx
+	outputXlsx.DeleteSheet("Sheet1")
+	err = outputXlsx.SaveAs(outputPrefix + ".xlsx")
+	checkError(err)
 }
 
 func checkError(e error) {
