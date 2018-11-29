@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var LoF = map[string]int{
@@ -20,13 +21,13 @@ var LoF = map[string]int{
 	"span":       1,
 }
 
-var isHgmd, e1 = regexp.Compile("DM")
-var isClinvar, e2 = regexp.Compile("Pathogenic|Likely_pathogenic")
+var isHgmd = regexp.MustCompile("DM")
+var isClinvar = regexp.MustCompile("Pathogenic|Likely_pathogenic")
+
+//var leftBracket = regexp.MustCompile("(")
 var geneDb = make(map[string]string)
 
 func main() {
-	checkError(e1)
-	checkError(e2)
 	var inputXlsxPath, outputPrefix string
 	if len(os.Args) > 2 {
 		inputXlsxPath = os.Args[1]
@@ -87,7 +88,7 @@ func main() {
 		if sheetName == "filter_variants" {
 			annoSheet3(*sheet, outputXlsx, sheetName, titleList)
 		} else {
-			copySheet3(*sheet, outputXlsx, sheetName)
+			copySheet4(*sheet, outputXlsx, sheetName)
 		}
 	}
 	// 保存到 outputPrefix.xlsx
@@ -251,7 +252,7 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 		if i == 0 {
 			for _, cell := range row.Cells {
 				text, _ := cell.FormattedValue()
-				keysList = append(keysList, text)
+				keysList = append(keysList, strings.Split(text, "(")[0])
 			}
 			for _, title := range titleList {
 				//axis := positionToAxis(i, j)
@@ -299,22 +300,26 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				}
 			}
 
-			dataHash["烈性突变"] = "N"
+			dataHash["烈性突变"] = "否"
 			if LoF[dataHash["Function"]] == 1 {
-				dataHash["烈性突变"] = "Y"
+				dataHash["烈性突变"] = "是"
 			}
 
-			dataHash["HGMDorClinvar"] = "N"
+			dataHash["HGMDorClinvar"] = "否"
 			if isHgmd.MatchString(dataHash["HGMD Pred"]) {
-				dataHash["HGMDorClinvar"] = "Y"
+				dataHash["HGMDorClinvar"] = "是"
 			}
 			if isClinvar.MatchString(dataHash["ClinVar Significance"]) {
-				dataHash["HGMDorClinvar"] = "Y"
+				dataHash["HGMDorClinvar"] = "是"
 			}
 
-			dataHash["纯合，半合"] = dataHash["GnomAD homo"] + "|" + dataHash["GnomAD hemi"]
+			dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
+			dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
+			dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] + "|" + dataHash["GnomAD HemiAlt Count"]
 
 			dataHash["突变频谱"] = geneDb[dataHash["Gene Symbol"]]
+
+			dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
 
 			for _, title := range titleList {
 				outputCell := outputRow.AddCell()
@@ -352,6 +357,20 @@ func copySheet2(sheet *xlsx.Sheet, outputXlsx *excelize.File, sheetName string) 
 func copySheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
 	_, err := outputXlsx.AppendSheet(sheet, sheetName)
 	checkError(err)
+	return err
+}
+
+func copySheet4(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
+	outputSheet, err := outputXlsx.AddSheet(sheetName)
+	checkError(err)
+	for _, row := range sheet.Rows {
+		var outputRow = outputSheet.AddRow()
+		for _, cell := range row.Cells {
+			text, _ := cell.FormattedValue()
+			outputCell := outputRow.AddCell()
+			outputCell.SetString(text)
+		}
+	}
 	return err
 }
 
