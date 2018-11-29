@@ -20,12 +20,27 @@ var LoF = map[string]int{
 	"stop-gain":  1,
 	"span":       1,
 }
-
+var geneDbHash = map[string]string{
+	"OMIM":                  "Phenotype MIM number",
+	"DiseaseNameEN":         "Disease NameEN",
+	"DiseaseNameCH":         "Disease NameCH",
+	"AliasEN":               "Alternative Disease NameEN",
+	"Location":              "Location",
+	"Gene":                  "Gene/Locus",
+	"Gene/Locus MIM number": "Gene/Locus MIM number",
+	"ModeInheritance":       "Inheritance",
+	"GeneralizationEN":      "GeneralizationEN",
+	"GeneralizationCH":      "GeneralizationCH",
+	//"SystemSort":"SystemSort",
+}
 var isHgmd = regexp.MustCompile("DM")
 var isClinvar = regexp.MustCompile("Pathogenic|Likely_pathogenic")
+var indexReg = regexp.MustCompile(`\d+\.\s+`)
 
 //var leftBracket = regexp.MustCompile("(")
 var geneDb = make(map[string]string)
+
+var acmgDb = make(map[string]map[string]string)
 
 func main() {
 	var inputXlsxPath, outputPrefix string
@@ -54,6 +69,23 @@ func main() {
 	titleXlsx, err := excelize.OpenFile("title.xlsx")
 	checkError(err)
 	titleList := titleXlsx.GetRows("title")[0]
+
+	// ACMG推荐基因数据库
+	acmgDbXlsx, err := excelize.OpenFile("崔淑歌 文献 ACMG推荐59个基因更新-20181030.xlsx")
+	checkError(err)
+	acmgDbRows := acmgDbXlsx.GetRows("ACMG推荐59个基因")
+	var acmgDbTitle []string
+	for i, row := range acmgDbRows {
+		if i == 0 {
+			acmgDbTitle = row
+		} else {
+			var dataHash = make(map[string]string)
+			for j, cell := range row {
+				dataHash[acmgDbTitle[j]] = cell
+			}
+			acmgDb[dataHash["Gene/Locus"]] = dataHash
+		}
+	}
 
 	// 突变频谱数据库
 	geneDbXlsx, err := excelize.OpenFile("基因库0906（最终版）.xlsx")
@@ -265,6 +297,9 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				text, _ := cell.FormattedValue()
 				dataHash[keysList[j]] = text
 			}
+
+			geneSymbol := dataHash["Gene Symbol"]
+
 			// pHGVS= pHGVS1+"|"+pHGVS3
 			dataHash["pHGVS"] = dataHash["pHGVS1"] + " | " + dataHash["pHGVS3"]
 
@@ -317,9 +352,42 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 			dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
 			dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] + "|" + dataHash["GnomAD HemiAlt Count"]
 
-			dataHash["突变频谱"] = geneDb[dataHash["Gene Symbol"]]
+			dataHash["突变频谱"] = geneDb[geneSymbol]
 
 			dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
+
+			// remove index
+			for _, k := range [2]string{"GeneralizationEN", "GeneralizationCH"} {
+				sep := "\n\n"
+				keys := strings.Split(dataHash[k], sep)
+				for i, _ := range keys {
+					keys[i] = indexReg.ReplaceAllLiteralString(keys[i], "")
+				}
+				dataHash[k] = strings.Join(keys, sep)
+			}
+			// add acmg
+
+			if acmgDb[geneSymbol] != nil {
+				acmgDbGene := acmgDb[geneSymbol]
+				if dataHash["Gene"] == "." {
+					for k, v := range geneDbHash {
+						dataHash[k] = acmgDbGene[v]
+					}
+					dataHash["SystemSort"] = "ACMG"
+				} else {
+					for k, v := range geneDbHash {
+						if k == "GeneralizationEN" || k == "GeneralizationCH" {
+							sep := "\n\n"
+							dataHash[k] = dataHash[k] + sep + acmgDbGene[v]
+						} else {
+							sep := "\n"
+							dataHash[k] = dataHash[k] + sep + acmgDbGene[v]
+						}
+					}
+					sep := "\n"
+					dataHash["SystemSort"] = dataHash["SystemSort"] + sep + "ACMG"
+				}
+			}
 
 			for _, title := range titleList {
 				outputCell := outputRow.AddCell()
