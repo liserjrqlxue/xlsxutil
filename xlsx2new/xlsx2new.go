@@ -51,6 +51,16 @@ var (
 		"基因-疾病（隐藏线粒体基因组）",
 		"sheet name of 突变频谱 database in excel",
 	)
+	titleExcel = flag.String(
+		"title",
+		exPath+string(os.PathSeparator)+"title.xlsx",
+		"output title list in excel",
+	)
+	titleSheet = flag.String(
+		"titleSheet",
+		"title",
+		"sheet name of output title in excel",
+	)
 )
 
 var LoF = map[string]int{
@@ -109,9 +119,9 @@ func main() {
 	}
 	checkError(scanner.Err())
 	*/
-	titleXlsx, err := excelize.OpenFile("title.xlsx")
+	titleXlsx, err := excelize.OpenFile(*titleExcel)
 	checkError(err)
-	titleList := titleXlsx.GetRows("title")[0]
+	titleList := titleXlsx.GetRows(*titleSheet)[0]
 
 	// ACMG推荐基因数据库
 	acmgDbXlsx, err := excelize.OpenFile(*acmgExcel)
