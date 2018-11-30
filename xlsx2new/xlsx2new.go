@@ -13,8 +13,10 @@ import (
 	"strings"
 )
 
-var ex, _ = os.Executable()
-var exPath = filepath.Dir(ex)
+var (
+	ex, _  = os.Executable()
+	exPath = filepath.Dir(ex)
+)
 
 var (
 	help = flag.Bool(
@@ -59,6 +61,14 @@ var (
 	)
 )
 
+var long2short = map[string]string{
+	"Pathogenic":             "P",
+	"Likely Pathogenic":      "LP",
+	"Uncertain Significance": "VUS",
+	"Likely Benign":          "LB",
+	"Benign":                 "B",
+}
+
 var LoF = map[string]int{
 	"splice-3":   1,
 	"splice-5":   1,
@@ -69,6 +79,7 @@ var LoF = map[string]int{
 	"stop-gain":  1,
 	"span":       1,
 }
+
 var geneDbHash = map[string]string{
 	"OMIM":                  "Phenotype MIM number",
 	"DiseaseNameEN":         "Disease NameEN",
@@ -82,9 +93,12 @@ var geneDbHash = map[string]string{
 	"GeneralizationCH":      "GeneralizationCH",
 	//"SystemSort":"SystemSort",
 }
-var isHgmd = regexp.MustCompile("DM")
-var isClinvar = regexp.MustCompile("Pathogenic|Likely_pathogenic")
-var indexReg = regexp.MustCompile(`\d+\.\s+`)
+
+var (
+	isHgmd    = regexp.MustCompile("DM")
+	isClinvar = regexp.MustCompile("Pathogenic|Likely_pathogenic")
+	indexReg  = regexp.MustCompile(`\d+\.\s+`)
+)
 
 //var leftBracket = regexp.MustCompile("(")
 var geneDb = make(map[string]string)
@@ -120,6 +134,8 @@ func main() {
 			acmgDb[dataHash["Gene/Locus"]] = dataHash
 		}
 	}
+	//acmgDb2:=sheet2mapHash(acmgDbXlsx,*acmgSheet,"Gene/Locus")
+	//fmt.Println(reflect.DeepEqual(acmgDb2,acmgDb))
 
 	// 突变频谱数据库
 	geneDbXlsx, err := excelize.OpenFile(*geneDbExcel)
@@ -157,6 +173,7 @@ func main() {
 	err = outputXlsx.Save(*outputExcel)
 	checkError(err)
 }
+
 func tsv2array(tsv string) []string {
 	file, err := os.Open(tsv)
 	checkError(err)
@@ -168,6 +185,42 @@ func tsv2array(tsv string) []string {
 	}
 	checkError(scanner.Err())
 	return array
+}
+
+func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string {
+	rows := excel.GetRows(sheetName)
+	var mapArray []map[string]string
+	var title []string
+	for i, row := range rows {
+		if i == 0 {
+			title = row
+		} else {
+			var dataHash = make(map[string]string)
+			for j, cell := range row {
+				dataHash[title[j]] = cell
+			}
+			mapArray = append(mapArray, dataHash)
+		}
+	}
+	return mapArray
+}
+
+func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[string]string {
+	rows := excel.GetRows(sheetName)
+	var mapHash map[string]map[string]string
+	var title []string
+	for i, row := range rows {
+		if i == 0 {
+			title = row
+		} else {
+			var dataHash = make(map[string]string)
+			for j, cell := range row {
+				dataHash[title[j]] = cell
+			}
+			mapHash[dataHash[key]] = dataHash
+		}
+	}
+	return mapHash
 }
 
 func annoSheet(inputXlsx, outputXlsx *excelize.File, sheetName string, titleList []string) error {
@@ -406,7 +459,6 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				dataHash[k] = strings.Join(keys, sep)
 			}
 			// add acmg
-
 			if acmgDb[geneSymbol] != nil {
 				acmgDbGene := acmgDb[geneSymbol]
 				if dataHash["Gene"] == "." {
@@ -428,6 +480,9 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 					dataHash["SystemSort"] = dataHash["SystemSort"] + sep + "ACMG"
 				}
 			}
+
+			// 自动化判断
+			dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
 
 			for _, title := range titleList {
 				outputCell := outputRow.AddCell()
