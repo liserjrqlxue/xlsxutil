@@ -1,13 +1,56 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/tealeg/xlsx"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+)
+
+var ex, _ = os.Executable()
+var exPath = filepath.Dir(ex)
+
+var (
+	help = flag.Bool(
+		"help",
+		false,
+		"this help",
+	)
+	inputExcel = flag.String(
+		"input",
+		"",
+		"input Excel",
+	)
+	outputExcel = flag.String(
+		"output",
+		"",
+		"output Excel",
+	)
+	acmgExcel = flag.String(
+		"acmg",
+		exPath+string(os.PathSeparator)+"崔淑歌 文献 ACMG推荐59个基因更新-20181030.xlsx",
+		"database of ACMG",
+	)
+	acmgSheet = flag.String(
+		"acmgSheet",
+		"ACMG推荐59个基因",
+		"sheet name of ACMG database in excel",
+	)
+	geneDbExcel = flag.String(
+		"geneDb",
+		exPath+string(os.PathSeparator)+"基因库0906（最终版）.xlsx",
+		"database of 突变频谱",
+	)
+	geneDbSheet = flag.String(
+		"geneDbSheet",
+		"基因-疾病（隐藏线粒体基因组）",
+		"sheet name of 突变频谱 database in excel",
+	)
 )
 
 var LoF = map[string]int{
@@ -43,14 +86,14 @@ var geneDb = make(map[string]string)
 var acmgDb = make(map[string]map[string]string)
 
 func main() {
-	var inputXlsxPath, outputPrefix string
-	if len(os.Args) > 2 {
-		inputXlsxPath = os.Args[1]
-		outputPrefix = os.Args[2]
-	} else {
-		fmt.Println(os.Args[0], "input.xlsx", "outputPrefix")
-		os.Exit(1)
+	flag.Parse()
+	if *help || *outputExcel == "" {
+		flag.Usage()
+		os.Exit(0)
 	}
+
+	inputXlsx, err := xlsx.OpenFile(*inputExcel)
+	checkError(err)
 
 	// 读取输出title list
 	/*  中文乱码问题待解决，用title.xlsx替代
@@ -71,9 +114,9 @@ func main() {
 	titleList := titleXlsx.GetRows("title")[0]
 
 	// ACMG推荐基因数据库
-	acmgDbXlsx, err := excelize.OpenFile("崔淑歌 文献 ACMG推荐59个基因更新-20181030.xlsx")
+	acmgDbXlsx, err := excelize.OpenFile(*acmgExcel)
 	checkError(err)
-	acmgDbRows := acmgDbXlsx.GetRows("ACMG推荐59个基因")
+	acmgDbRows := acmgDbXlsx.GetRows(*acmgSheet)
 	var acmgDbTitle []string
 	for i, row := range acmgDbRows {
 		if i == 0 {
@@ -88,9 +131,9 @@ func main() {
 	}
 
 	// 突变频谱数据库
-	geneDbXlsx, err := excelize.OpenFile("基因库0906（最终版）.xlsx")
+	geneDbXlsx, err := excelize.OpenFile(*geneDbExcel)
 	checkError(err)
-	geneDbRows := geneDbXlsx.GetRows("基因-疾病（隐藏线粒体基因组）")
+	geneDbRows := geneDbXlsx.GetRows(*geneDbSheet)
 	var geneDbTitle []string
 
 	for i, row := range geneDbRows {
@@ -104,10 +147,6 @@ func main() {
 			geneDb[dataHash["基因名称"]] = dataHash["突变类型"]
 		}
 	}
-
-	// 读取input.xlsx
-	inputXlsx, err := xlsx.OpenFile(inputXlsxPath)
-	checkError(err)
 
 	// 生成新excel
 	outputXlsx := xlsx.NewFile()
@@ -123,10 +162,8 @@ func main() {
 			copySheet4(*sheet, outputXlsx, sheetName)
 		}
 	}
-	// 保存到 outputPrefix.xlsx
-	//outputXlsx.DeleteSheet("Sheet1")
-	//outputXlsx.SetActiveSheet(1)
-	err = outputXlsx.Save(outputPrefix + ".xlsx")
+	// 保存到 outputExcel
+	err = outputXlsx.Save(*outputExcel)
 	checkError(err)
 }
 
