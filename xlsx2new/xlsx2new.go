@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -51,15 +52,10 @@ var (
 		"基因-疾病（隐藏线粒体基因组）",
 		"sheet name of 突变频谱 database in excel",
 	)
-	titleExcel = flag.String(
+	titleTxt = flag.String(
 		"title",
-		exPath+string(os.PathSeparator)+"title.xlsx",
-		"output title list in excel",
-	)
-	titleSheet = flag.String(
-		"titleSheet",
-		"title",
-		"sheet name of output title in excel",
+		exPath+string(os.PathSeparator)+"etc"+string(os.PathSeparator)+"title.txt",
+		"output title list",
 	)
 )
 
@@ -106,22 +102,16 @@ func main() {
 	checkError(err)
 
 	// 读取输出title list
-	/*  中文乱码问题待解决，用title.xlsx替代
-	file,err:=os.Open("title.txt")
+	file, err := os.Open(*titleTxt)
 	checkError(err)
 	defer file.Close()
-
 	var titleList []string
-	scanner:=bufio.NewScanner(file)
-	for scanner.Scan(){
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
 		fmt.Println(scanner.Text())
-		titleList=append(titleList,scanner.Text())
+		titleList = append(titleList, scanner.Text())
 	}
 	checkError(scanner.Err())
-	*/
-	titleXlsx, err := excelize.OpenFile(*titleExcel)
-	checkError(err)
-	titleList := titleXlsx.GetRows(*titleSheet)[0]
 
 	// ACMG推荐基因数据库
 	acmgDbXlsx, err := excelize.OpenFile(*acmgExcel)
