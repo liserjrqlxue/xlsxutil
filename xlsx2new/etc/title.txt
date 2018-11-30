@@ -1,0 +1,141 @@
+#Chr
+Start
+Stop
+Ref
+Call
+VarType
+InExcel
+SampleID
+Gene Symbol
+Transcript
+cHGVS
+pHGVS
+pHGVS1
+pHGVS3
+ExIn_ID
+Zygosity
+Flank
+A.Depth
+A.Ratio
+#Chr+Stop
+Protein
+Ens SIFT Score
+Ens Polyphen2HumVar Score
+Strand
+CodonChange
+PolarChange
+rsID
+MapLoc
+FuncRegion
+EntrezGeneID
+Function
+pfamId
+pfamName
+RepeatTag
+Filter
+TestCode
+MIM Gene ID
+MIM Inheritance
+MIM information
+CGD Condition
+CGD Inheritance
+CGD Allelic Condition
+CGD Manifestation Categories
+CGD Intervention Categories
+CGD References
+MutationName
+ClinVar Significance
+ClinVar Significance nearby
+dbSNP Allele Freq
+1000G ASN AF
+1000G EAS AF
+1000G AF
+ESP6500 AF
+ExAC EAS AF
+ExAC HomoAlt Count
+ExAC AF
+PVFD Homo Count
+PVFD Homo Frequency
+PVFD AF
+GnomAD AF
+GnomAD EAS AF
+GnomAD homo
+GnomAD hemi
+Panel AlleleFreq
+GWAS Risk Allele
+GWAS pmID
+GWAS Trait
+PhyloP Primates
+PhyloP Vertebrates
+PhyloP Placental Mammals
+Ens Polyphen2HumDar Score
+Ens Polyphen2HumDiv Score
+Ens Condel Score
+Ens Condel Pred
+HGMD ID
+HGMD Disease
+HGMD pmID
+HGMD Pred
+Interpro_domain
+SIFT Pred
+Polyphen2 HDIV Pred
+Polyphen2 HVAR Pred
+LRT Pred
+MutationTaster Pred
+MutationAssessor Pred
+FATHMM Pred
+GERP++_RS
+dbscSNV_ADA_SCORE
+dbscSNV_RF_SCORE
+GERP++_RS_pred
+dbscSNV_ADA_pred
+dbscSNV_RF_pred
+GWASdb_or
+AutoInterpStatus
+ACMG
+引物设计
+一键搜索链接
+autoRuleName
+autoIsChecked
+manualRuleName
+manualEevidenceType
+manualExplaination
+manualIsChecked
+manualIsIgnore
+dcDocumentType
+dcDocumentNo
+dcRuleName
+dcIsChoice
+dcWeight
+dcDescription
+OMIM
+DiseaseNameEN
+DiseaseNameCH
+AliasEN
+Location
+Gene
+Gene/Locus MIM number
+ModeInheritance
+GeneralizationEN
+GeneralizationCH
+SystemSort
+MUTATION_TYPE
+LITERATURE
+DISEASE_PHENOTYPE
+mut
+frequency
+sampleMut
+sampleAll
+sampleInformation
+表型分值
+exomiser
+烈性突变
+HGMDorClinvar
+自动化判断
+遗传相符
+纯合，半合
+综合排序
+突变频谱
+基因描述
+变异来源
+历史样本检出个数
