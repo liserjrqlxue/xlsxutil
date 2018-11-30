@@ -102,16 +102,7 @@ func main() {
 	checkError(err)
 
 	// 读取输出title list
-	file, err := os.Open(*titleTxt)
-	checkError(err)
-	defer file.Close()
-	var titleList []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-		titleList = append(titleList, scanner.Text())
-	}
-	checkError(scanner.Err())
+	titleList := tsv2array(*titleTxt)
 
 	// ACMG推荐基因数据库
 	acmgDbXlsx, err := excelize.OpenFile(*acmgExcel)
@@ -165,6 +156,18 @@ func main() {
 	// 保存到 outputExcel
 	err = outputXlsx.Save(*outputExcel)
 	checkError(err)
+}
+func tsv2array(tsv string) []string {
+	file, err := os.Open(tsv)
+	checkError(err)
+	defer file.Close()
+	var array []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		array = append(array, scanner.Text())
+	}
+	checkError(scanner.Err())
+	return array
 }
 
 func annoSheet(inputXlsx, outputXlsx *excelize.File, sheetName string, titleList []string) error {
