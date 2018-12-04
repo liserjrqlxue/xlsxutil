@@ -443,7 +443,8 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 
 			dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
 			dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
-			dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] + "|" + dataHash["GnomAD HemiAlt Count"]
+			dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] // + "|" + dataHash["GnomAD HemiAlt Count"]
+			dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
 
 			dataHash["突变频谱"] = geneDb[geneSymbol]
 

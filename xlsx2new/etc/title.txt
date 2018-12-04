@@ -7,6 +7,7 @@ VarType
 InExcel
 SampleID
 Gene Symbol
+MutationNameLite
 Transcript
 cHGVS
 pHGVS
