@@ -59,9 +59,13 @@ PVFD Homo Count
 PVFD Homo Frequency
 PVFD AF
 GnomAD AF
-GnomAD EAS AF
+GnomAD HomoAlt Count
+GnomAD HemiAlt Count
 GnomAD homo
 GnomAD hemi
+GnomAD EAS AF
+GnomAD EAS HomoAlt Count
+GnomAD EAS HemiAlt Count
 Panel AlleleFreq
 GWAS Risk Allele
 GWAS pmID
