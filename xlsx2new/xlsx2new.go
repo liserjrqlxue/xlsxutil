@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
 	"os"
 	"path/filepath"
@@ -105,6 +106,8 @@ var geneDb = make(map[string]string)
 
 var acmgDb = make(map[string]map[string]string)
 
+var err error
+
 func main() {
 	flag.Parse()
 	if *help || *outputExcel == "" {
@@ -164,10 +167,11 @@ func main() {
 	for sheetName, sheet := range sheetMap {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
-			annoSheet3(*sheet, outputXlsx, sheetName, titleList)
+			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
 		} else {
-			copySheet4(*sheet, outputXlsx, sheetName)
+			err = copySheet4(*sheet, outputXlsx, sheetName)
 		}
+		checkError(err)
 	}
 	// 保存到 outputExcel
 	err = outputXlsx.Save(*outputExcel)
@@ -177,7 +181,7 @@ func main() {
 func tsv2array(tsv string) []string {
 	file, err := os.Open(tsv)
 	checkError(err)
-	defer file.Close()
+	defer simple_util.DeferClose(file)
 	var array []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -207,7 +211,7 @@ func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string 
 
 func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[string]string {
 	rows := excel.GetRows(sheetName)
-	var mapHash map[string]map[string]string
+	var mapHash = make(map[string]map[string]string)
 	var title []string
 	for i, row := range rows {
 		if i == 0 {
@@ -428,24 +432,29 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				}
 			}
 
+			// 0-0.6 不保守  0.6-2.5 保守 ＞2.5 高度保守
 			score, err = strconv.ParseFloat(dataHash["PhyloP Vertebrates"], 32)
 			if err != nil {
 				dataHash["PhyloP Vertebrates Pred"] = dataHash["PhyloP Vertebrates"]
 			} else {
-				if score >= 2 {
-					dataHash["PhyloP Vertebrates Pred"] = "D"
+				if score >= 2.5 {
+					dataHash["PhyloP Vertebrates Pred"] = "高度保守"
+				} else if score > 0.6 {
+					dataHash["PhyloP Vertebrates Pred"] = "保守"
 				} else {
-					dataHash["PhyloP Vertebrates Pred"] = "P"
+					dataHash["PhyloP Vertebrates Pred"] = "不保守"
 				}
 			}
 			score, err = strconv.ParseFloat(dataHash["PhyloP Placental Mammals"], 32)
 			if err != nil {
 				dataHash["PhyloP Placental Mammals Pred"] = dataHash["PhyloP Placental Mammals"]
 			} else {
-				if score >= 2 {
-					dataHash["PhyloP Placental Mammals Pred"] = "D"
+				if score >= 2.5 {
+					dataHash["PhyloP Placental Mammals Pred"] = "高度保守"
+				} else if score > 0.6 {
+					dataHash["PhyloP Placental Mammals Pred"] = "保守"
 				} else {
-					dataHash["PhyloP Placental Mammals Pred"] = "P"
+					dataHash["PhyloP Placental Mammals Pred"] = "不保守"
 				}
 			}
 
