@@ -73,6 +73,8 @@ GWAS Trait
 PhyloP Primates
 PhyloP Vertebrates
 PhyloP Placental Mammals
+PhyloP Vertebrates Pred
+PhyloP Placental Mammals Pred
 Ens Polyphen2HumDar Score
 Ens Polyphen2HumDiv Score
 Ens Condel Score
