@@ -428,6 +428,27 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				}
 			}
 
+			score, err = strconv.ParseFloat(dataHash["PhyloP Vertebrates"], 32)
+			if err != nil {
+				dataHash["PhyloP Vertebrates Pred"] = dataHash["PhyloP Vertebrates"]
+			} else {
+				if score >= 2 {
+					dataHash["PhyloP Vertebrates Pred"] = "D"
+				} else {
+					dataHash["PhyloP Vertebrates Pred"] = "P"
+				}
+			}
+			score, err = strconv.ParseFloat(dataHash["PhyloP Placental Mammals"], 32)
+			if err != nil {
+				dataHash["PhyloP Placental Mammals Pred"] = dataHash["PhyloP Placental Mammals"]
+			} else {
+				if score >= 2 {
+					dataHash["PhyloP Placental Mammals Pred"] = "D"
+				} else {
+					dataHash["PhyloP Placental Mammals Pred"] = "P"
+				}
+			}
+
 			dataHash["烈性突变"] = "否"
 			if LoF[dataHash["Function"]] == 1 {
 				dataHash["烈性突变"] = "是"
