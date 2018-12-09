@@ -2,16 +2,19 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -60,6 +63,11 @@ var (
 		exPath+string(os.PathSeparator)+"etc"+string(os.PathSeparator)+"title.txt",
 		"output title list",
 	)
+	annoCnv = flag.Bool(
+		"annoCnv",
+		false,
+		"anno exon_cnv sheet with disease of target gene",
+	)
 )
 
 var long2short = map[string]string{
@@ -106,7 +114,21 @@ var geneDb = make(map[string]string)
 
 var acmgDb = make(map[string]map[string]string)
 
-var err error
+var myClient = &http.Client{Timeout: 10 * time.Second}
+var host = "http://192.168.136.114:9898"
+var exonCnvAdd = []string{
+	"OMIM",
+	"DiseaseNameEN",
+	"DiseaseNameCH",
+	"AliasEN",
+	"Location",
+	"Omim Gene",
+	"Gene/Locus MIM number",
+	"ModeInheritance",
+	"GeneralizationEN",
+	"GeneralizationCH",
+	"SystemSort",
+}
 
 func main() {
 	flag.Parse()
@@ -168,10 +190,14 @@ func main() {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
 			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
+			simple_util.CheckErr(err)
+		} else if sheetName == "exon_cnv" && *annoCnv {
+			err = annoExonCnv(*sheet, outputXlsx, sheetName)
+			simple_util.CheckErr(err)
 		} else {
 			err = copySheet4(*sheet, outputXlsx, sheetName)
+			simple_util.CheckErr(err)
 		}
-		checkError(err)
 	}
 	// 保存到 outputExcel
 	err = outputXlsx.Save(*outputExcel)
@@ -572,4 +598,80 @@ func checkError(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+func getJson(url string, target interface{}) error {
+	r, err := myClient.Get(url)
+	simple_util.CheckErr(err)
+	defer simple_util.DeferClose(r.Body)
+
+	return json.NewDecoder(r.Body).Decode(target)
+}
+
+func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
+	outputSheet, err := outputXlsx.AddSheet(sheetName)
+	checkError(err)
+	var keysList []string
+	var keysHash = make(map[string]bool)
+	for i, row := range sheet.Rows {
+		var outputRow = outputSheet.AddRow()
+		if i == 0 {
+			for _, cell := range row.Cells {
+				text, _ := cell.FormattedValue()
+				key := strings.Split(text, "(")[0]
+				keysList = append(keysList, key)
+				keysHash[key] = true
+			}
+			for _, title := range exonCnvAdd {
+				if !keysHash[title] {
+					keysList = append(keysList, title)
+				}
+			}
+			for _, title := range keysList {
+				outputCell := outputRow.AddCell()
+				outputCell.SetString(title)
+			}
+		} else {
+			var dataHash = make(map[string]string)
+			for j, cell := range row.Cells {
+				text, _ := cell.FormattedValue()
+				dataHash[keysList[j]] = text
+			}
+			geneArray := strings.Split(dataHash["OMIM_Gene"], ";")
+			dataHash["OMIM_Gene"] = strings.Join(geneArray, "\n")
+			var diseaseInfo []string
+			var mergeInfo = make(map[string][]string)
+			for _, gene := range geneArray {
+				if gene == "" {
+					continue
+				}
+				err = getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
+				simple_util.CheckErr(err)
+				//fmt.Println(len(diseaseInfo))
+				if len(diseaseInfo) == 11 {
+					for i, k := range exonCnvAdd {
+						var sep string = "\n"
+						if k == "GeneralizationEN" || k == "GeneralizationCH" {
+							sep = "\n\n"
+						}
+						mergeInfo[k] = append(mergeInfo[k], strings.Join(strings.Split(diseaseInfo[i], "\n"), sep))
+					}
+				}
+			}
+			for _, k := range exonCnvAdd {
+				var sep string = "\n"
+				/*if k == "GeneralizationEN" || k == "GeneralizationCH" {
+					sep="\n\n"
+				}else{
+					sep="\n"
+				}*/
+				dataHash[k] = strings.Join(mergeInfo[k], sep)
+			}
+			for _, title := range keysList {
+				outputCell := outputRow.AddCell()
+				outputCell.SetString(dataHash[title])
+			}
+		}
+	}
+	return nil
 }
