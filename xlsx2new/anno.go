@@ -204,27 +204,38 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				}
 				dataHash[k] = strings.Join(keys, sep)
 			}
+
 			// add acmg
 			if acmgDb[geneSymbol] != nil {
 				acmgDbGene := acmgDb[geneSymbol]
+				var sep = "\n"
+				systemSort := strings.Split(acmgDbGene["SystemSort"], sep)
+				for i, _ := range systemSort {
+					systemSort[i] = "ACMG"
+				}
+
 				if dataHash["Gene"] == "." {
 					for k, v := range geneDbHash {
 						dataHash[k] = acmgDbGene[v]
 					}
-					dataHash["SystemSort"] = "ACMG"
 				} else {
 					for k, v := range geneDbHash {
+						sep = "\n"
+						vArray := strings.Split(acmgDbGene[v], sep)
 						if k == "GeneralizationEN" || k == "GeneralizationCH" {
-							sep := "\n\n"
-							dataHash[k] = dataHash[k] + sep + acmgDbGene[v]
-						} else {
-							sep := "\n"
-							dataHash[k] = dataHash[k] + sep + acmgDbGene[v]
+							sep = "\n\n"
 						}
+						for _, str := range strings.Split(dataHash[k], sep) {
+							vArray = append(vArray, str)
+						}
+						dataHash[k] = strings.Join(vArray, sep)
 					}
-					sep := "\n"
-					dataHash["SystemSort"] = dataHash["SystemSort"] + sep + "ACMG"
+					sep = "\n"
+					for _, str := range strings.Split(dataHash["SystemSort"], sep) {
+						systemSort = append(systemSort, str)
+					}
 				}
+				dataHash["SystemSort"] = strings.Join(systemSort, sep)
 			}
 
 			// 自动化判断
@@ -240,7 +251,6 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 }
 
 // copy sheet without change
-
 func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) error {
 	inputRows := inputXlsx.GetRows(sheetName)
 	outputXlsx.NewSheet(sheetName)
@@ -252,7 +262,6 @@ func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) error {
 	}
 	return nil
 }
-
 func copySheet2(sheet *xlsx.Sheet, outputXlsx *excelize.File, sheetName string) error {
 	outputXlsx.NewSheet(sheetName)
 	for i, row := range sheet.Rows {
@@ -264,13 +273,11 @@ func copySheet2(sheet *xlsx.Sheet, outputXlsx *excelize.File, sheetName string) 
 	}
 	return nil
 }
-
 func copySheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
 	_, err := outputXlsx.AppendSheet(sheet, sheetName)
 	simple_util.CheckErr(err)
 	return err
 }
-
 func copySheet4(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
@@ -319,4 +326,24 @@ func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[s
 		}
 	}
 	return mapHash
+}
+
+func excel2MapMap(excelPath, sheetName, key string) map[string]map[string]string {
+	inXlsx, err := excelize.OpenFile(excelPath)
+	simple_util.CheckErr(err)
+	var db = make(map[string]map[string]string)
+	rows := inXlsx.GetRows(sheetName)
+	var title []string
+	for i, row := range rows {
+		if i == 0 {
+			title = row
+		} else {
+			var dataHash = make(map[string]string)
+			for j, cell := range row {
+				dataHash[title[j]] = cell
+			}
+			db[dataHash[key]] = dataHash
+		}
+	}
+	return db
 }

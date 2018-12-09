@@ -140,21 +140,8 @@ func main() {
 	titleList := simple_util.File2Array(*titleTxt)
 
 	// ACMG推荐基因数据库
-	acmgDbXlsx, err := excelize.OpenFile(*acmgExcel)
-	simple_util.CheckErr(err)
-	acmgDbRows := acmgDbXlsx.GetRows(*acmgSheet)
-	var acmgDbTitle []string
-	for i, row := range acmgDbRows {
-		if i == 0 {
-			acmgDbTitle = row
-		} else {
-			var dataHash = make(map[string]string)
-			for j, cell := range row {
-				dataHash[acmgDbTitle[j]] = cell
-			}
-			acmgDb[dataHash["Gene/Locus"]] = dataHash
-		}
-	}
+	acmgDb = excel2MapMap(*acmgExcel, *acmgSheet, "Gene/Locus")
+
 	//acmgDb2:=sheet2mapHash(acmgDbXlsx,*acmgSheet,"Gene/Locus")
 	//fmt.Println(reflect.DeepEqual(acmgDb2,acmgDb))
 
