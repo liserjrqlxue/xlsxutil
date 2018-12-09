@@ -47,36 +47,8 @@ func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) erro
 				text, _ := cell.FormattedValue()
 				dataHash[keysList[j]] = text
 			}
-			geneArray := strings.Split(dataHash["OMIM_Gene"], ";")
-			dataHash["OMIM_Gene"] = strings.Join(geneArray, "\n")
-			var diseaseInfo []string
-			var mergeInfo = make(map[string][]string)
-			for _, gene := range geneArray {
-				if gene == "" {
-					continue
-				}
-				err = getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
-				simple_util.CheckErr(err)
-				//fmt.Println(len(diseaseInfo))
-				if len(diseaseInfo) == 11 {
-					for i, k := range exonCnvAdd {
-						var sep = "\n"
-						if k == "GeneralizationEN" || k == "GeneralizationCH" {
-							sep = "\n\n"
-						}
-						mergeInfo[k] = append(mergeInfo[k], strings.Join(strings.Split(diseaseInfo[i], "\n"), sep))
-					}
-				}
-			}
-			for _, k := range exonCnvAdd {
-				var sep = "\n"
-				/*if k == "GeneralizationEN" || k == "GeneralizationCH" {
-					sep="\n\n"
-				}else{
-					sep="\n"
-				}*/
-				dataHash[k] = strings.Join(mergeInfo[k], sep)
-			}
+
+			dataHash = updateExonCnv(dataHash)
 			for _, title := range keysList {
 				outputCell := outputRow.AddCell()
 				outputCell.SetString(dataHash[title])
@@ -84,6 +56,39 @@ func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) erro
 		}
 	}
 	return nil
+}
+
+func updateExonCnv(dataHash map[string]string) map[string]string {
+	geneArray := strings.Split(dataHash["OMIM_Gene"], ";")
+	dataHash["OMIM_Gene"] = strings.Join(geneArray, "\n")
+	var diseaseInfo []string
+	var mergeInfo = make(map[string][]string)
+	for _, gene := range geneArray {
+		if gene == "" || gene == "-" || gene == "." {
+			continue
+		}
+		err := getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
+		simple_util.CheckErr(err)
+		//fmt.Println(len(diseaseInfo))
+		if len(diseaseInfo) == 11 {
+			for i, k := range exonCnvAdd {
+				var sep = "\n"
+				if k == "GeneralizationEN" || k == "GeneralizationCH" {
+					sep = "\n\n"
+				}
+				//fmt.Println("["+k+"]\t["+sep+"]")
+				mergeInfo[k] = append(mergeInfo[k], strings.Join(strings.Split(diseaseInfo[i], "\n"), sep))
+			}
+		}
+	}
+	for _, k := range exonCnvAdd {
+		var sep = "\n"
+		if k == "GeneralizationEN" || k == "GeneralizationCH" {
+			sep = "\n\n"
+		}
+		dataHash[k] = strings.Join(mergeInfo[k], sep)
+	}
+	return dataHash
 }
 
 // anno snv
@@ -102,7 +107,7 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				//axis := positionToAxis(i, j)
 				outputCell := outputRow.AddCell()
 				outputCell.SetString(title)
-			}
+			} //write title
 		} else {
 			var dataHash = make(map[string]string)
 			for j, cell := range row.Cells {
@@ -110,137 +115,9 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				dataHash[keysList[j]] = text
 			}
 
-			geneSymbol := dataHash["Gene Symbol"]
+			dataHash = updateSnv(dataHash)
 
-			// pHGVS= pHGVS1+"|"+pHGVS3
-			dataHash["pHGVS"] = dataHash["pHGVS1"] + " | " + dataHash["pHGVS3"]
-
-			score, err := strconv.ParseFloat(dataHash["dbscSNV_ADA_SCORE"], 32)
-			if err != nil {
-				dataHash["dbscSNV_ADA_pred"] = dataHash["dbscSNV_ADA_SCORE"]
-			} else {
-				if score >= 0.6 {
-					dataHash["dbscSNV_ADA_pred"] = "D"
-				} else {
-					dataHash["dbscSNV_ADA_pred"] = "P"
-				}
-			}
-			score, err = strconv.ParseFloat(dataHash["dbscSNV_RF_SCORE"], 32)
-			if err != nil {
-				dataHash["dbscSNV_RF_pred"] = dataHash["dbscSNV_RF_SCORE"]
-			} else {
-				if score >= 0.6 {
-					dataHash["dbscSNV_RF_pred"] = "D"
-				} else {
-					dataHash["dbscSNV_RF_pred"] = "P"
-				}
-			}
-
-			score, err = strconv.ParseFloat(dataHash["GERP++_RS"], 32)
-			if err != nil {
-				dataHash["GERP++_RS_pred"] = dataHash["GERP++_RS"]
-			} else {
-				if score >= 2 {
-					dataHash["GERP++_RS_pred"] = "D"
-				} else {
-					dataHash["GERP++_RS_pred"] = "P"
-				}
-			}
-
-			// 0-0.6 不保守  0.6-2.5 保守 ＞2.5 高度保守
-			score, err = strconv.ParseFloat(dataHash["PhyloP Vertebrates"], 32)
-			if err != nil {
-				dataHash["PhyloP Vertebrates Pred"] = dataHash["PhyloP Vertebrates"]
-			} else {
-				if score >= 2.5 {
-					dataHash["PhyloP Vertebrates Pred"] = "高度保守"
-				} else if score > 0.6 {
-					dataHash["PhyloP Vertebrates Pred"] = "保守"
-				} else {
-					dataHash["PhyloP Vertebrates Pred"] = "不保守"
-				}
-			}
-			score, err = strconv.ParseFloat(dataHash["PhyloP Placental Mammals"], 32)
-			if err != nil {
-				dataHash["PhyloP Placental Mammals Pred"] = dataHash["PhyloP Placental Mammals"]
-			} else {
-				if score >= 2.5 {
-					dataHash["PhyloP Placental Mammals Pred"] = "高度保守"
-				} else if score > 0.6 {
-					dataHash["PhyloP Placental Mammals Pred"] = "保守"
-				} else {
-					dataHash["PhyloP Placental Mammals Pred"] = "不保守"
-				}
-			}
-
-			dataHash["烈性突变"] = "否"
-			if LoF[dataHash["Function"]] == 1 {
-				dataHash["烈性突变"] = "是"
-			}
-
-			dataHash["HGMDorClinvar"] = "否"
-			if isHgmd.MatchString(dataHash["HGMD Pred"]) {
-				dataHash["HGMDorClinvar"] = "是"
-			}
-			if isClinvar.MatchString(dataHash["ClinVar Significance"]) {
-				dataHash["HGMDorClinvar"] = "是"
-			}
-
-			dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
-			dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
-			dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] // + "|" + dataHash["GnomAD HemiAlt Count"]
-			dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
-
-			dataHash["突变频谱"] = geneDb[geneSymbol]
-
-			dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
-
-			// remove index
-			for _, k := range [2]string{"GeneralizationEN", "GeneralizationCH"} {
-				sep := "\n\n"
-				keys := strings.Split(dataHash[k], sep)
-				for i, _ := range keys {
-					keys[i] = indexReg.ReplaceAllLiteralString(keys[i], "")
-				}
-				dataHash[k] = strings.Join(keys, sep)
-			}
-
-			// add acmg
-			if acmgDb[geneSymbol] != nil {
-				acmgDbGene := acmgDb[geneSymbol]
-				var sep = "\n"
-				systemSort := strings.Split(acmgDbGene["SystemSort"], sep)
-				for i, _ := range systemSort {
-					systemSort[i] = "ACMG"
-				}
-
-				if dataHash["Gene"] == "." {
-					for k, v := range geneDbHash {
-						dataHash[k] = acmgDbGene[v]
-					}
-				} else {
-					for k, v := range geneDbHash {
-						sep = "\n"
-						vArray := strings.Split(acmgDbGene[v], sep)
-						if k == "GeneralizationEN" || k == "GeneralizationCH" {
-							sep = "\n\n"
-						}
-						for _, str := range strings.Split(dataHash[k], sep) {
-							vArray = append(vArray, str)
-						}
-						dataHash[k] = strings.Join(vArray, sep)
-					}
-					sep = "\n"
-					for _, str := range strings.Split(dataHash["SystemSort"], sep) {
-						systemSort = append(systemSort, str)
-					}
-				}
-				dataHash["SystemSort"] = strings.Join(systemSort, sep)
-			}
-
-			// 自动化判断
-			dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
-
+			// write to sheet
 			for _, title := range titleList {
 				outputCell := outputRow.AddCell()
 				outputCell.SetString(dataHash[title])
@@ -248,6 +125,140 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 		}
 	}
 	return nil
+}
+
+func updateSnv(dataHash map[string]string) map[string]string {
+	geneSymbol := dataHash["Gene Symbol"]
+
+	// pHGVS= pHGVS1+"|"+pHGVS3
+	dataHash["pHGVS"] = dataHash["pHGVS1"] + " | " + dataHash["pHGVS3"]
+
+	score, err := strconv.ParseFloat(dataHash["dbscSNV_ADA_SCORE"], 32)
+	if err != nil {
+		dataHash["dbscSNV_ADA_pred"] = dataHash["dbscSNV_ADA_SCORE"]
+	} else {
+		if score >= 0.6 {
+			dataHash["dbscSNV_ADA_pred"] = "D"
+		} else {
+			dataHash["dbscSNV_ADA_pred"] = "P"
+		}
+	}
+	score, err = strconv.ParseFloat(dataHash["dbscSNV_RF_SCORE"], 32)
+	if err != nil {
+		dataHash["dbscSNV_RF_pred"] = dataHash["dbscSNV_RF_SCORE"]
+	} else {
+		if score >= 0.6 {
+			dataHash["dbscSNV_RF_pred"] = "D"
+		} else {
+			dataHash["dbscSNV_RF_pred"] = "P"
+		}
+	}
+
+	score, err = strconv.ParseFloat(dataHash["GERP++_RS"], 32)
+	if err != nil {
+		dataHash["GERP++_RS_pred"] = dataHash["GERP++_RS"]
+	} else {
+		if score >= 2 {
+			dataHash["GERP++_RS_pred"] = "D"
+		} else {
+			dataHash["GERP++_RS_pred"] = "P"
+		}
+	}
+
+	// 0-0.6 不保守  0.6-2.5 保守 ＞2.5 高度保守
+	score, err = strconv.ParseFloat(dataHash["PhyloP Vertebrates"], 32)
+	if err != nil {
+		dataHash["PhyloP Vertebrates Pred"] = dataHash["PhyloP Vertebrates"]
+	} else {
+		if score >= 2.5 {
+			dataHash["PhyloP Vertebrates Pred"] = "高度保守"
+		} else if score > 0.6 {
+			dataHash["PhyloP Vertebrates Pred"] = "保守"
+		} else {
+			dataHash["PhyloP Vertebrates Pred"] = "不保守"
+		}
+	}
+	score, err = strconv.ParseFloat(dataHash["PhyloP Placental Mammals"], 32)
+	if err != nil {
+		dataHash["PhyloP Placental Mammals Pred"] = dataHash["PhyloP Placental Mammals"]
+	} else {
+		if score >= 2.5 {
+			dataHash["PhyloP Placental Mammals Pred"] = "高度保守"
+		} else if score > 0.6 {
+			dataHash["PhyloP Placental Mammals Pred"] = "保守"
+		} else {
+			dataHash["PhyloP Placental Mammals Pred"] = "不保守"
+		}
+	}
+
+	dataHash["烈性突变"] = "否"
+	if LoF[dataHash["Function"]] == 1 {
+		dataHash["烈性突变"] = "是"
+	}
+
+	dataHash["HGMDorClinvar"] = "否"
+	if isHgmd.MatchString(dataHash["HGMD Pred"]) {
+		dataHash["HGMDorClinvar"] = "是"
+	}
+	if isClinvar.MatchString(dataHash["ClinVar Significance"]) {
+		dataHash["HGMDorClinvar"] = "是"
+	}
+
+	dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
+	dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
+	dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] // + "|" + dataHash["GnomAD HemiAlt Count"]
+	dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
+
+	dataHash["突变频谱"] = geneDb[geneSymbol]
+
+	dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
+
+	// remove index
+	for _, k := range [2]string{"GeneralizationEN", "GeneralizationCH"} {
+		sep := "\n\n"
+		keys := strings.Split(dataHash[k], sep)
+		for i := range keys {
+			keys[i] = indexReg.ReplaceAllLiteralString(keys[i], "")
+		}
+		dataHash[k] = strings.Join(keys, sep)
+	}
+
+	// add acmg
+	if acmgDb[geneSymbol] != nil {
+		acmgDbGene := acmgDb[geneSymbol]
+		var sep = "\n"
+		systemSort := strings.Split(acmgDbGene["SystemSort"], sep)
+		for i := range systemSort {
+			systemSort[i] = "ACMG"
+		}
+
+		if dataHash["Gene"] == "." {
+			for k, v := range geneDbHash {
+				dataHash[k] = acmgDbGene[v]
+			}
+		} else {
+			for k, v := range geneDbHash {
+				sep = "\n"
+				vArray := strings.Split(acmgDbGene[v], sep)
+				if k == "GeneralizationEN" || k == "GeneralizationCH" {
+					sep = "\n\n"
+				}
+				for _, str := range strings.Split(dataHash[k], sep) {
+					vArray = append(vArray, str)
+				}
+				dataHash[k] = strings.Join(vArray, sep)
+			}
+			sep = "\n"
+			for _, str := range strings.Split(dataHash["SystemSort"], sep) {
+				systemSort = append(systemSort, str)
+			}
+		}
+		dataHash["SystemSort"] = strings.Join(systemSort, sep)
+	}
+
+	// 自动化判断
+	dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
+	return dataHash
 }
 
 // copy sheet without change
