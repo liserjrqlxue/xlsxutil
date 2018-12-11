@@ -53,6 +53,7 @@ dbSNP Allele Freq
 1000G AF
 ESP6500 AF
 ExAC EAS AF
+ExAC EAS HomoAlt Count
 ExAC HomoAlt Count
 ExAC AF
 PVFD Homo Count
