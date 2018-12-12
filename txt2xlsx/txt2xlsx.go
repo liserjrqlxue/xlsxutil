@@ -5,8 +5,10 @@ import (
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
 	"os"
+	"regexp"
 )
 
+// flag
 var (
 	outputExcel = flag.String(
 		"excel",
@@ -30,6 +32,35 @@ var (
 	)
 )
 
+// regexp
+var (
+	newLine = regexp.MustCompile(`\[\n\]`)
+)
+
+// newline break list
+var newLineList = []string{
+	"PP_interpretation", "PP_mutation information",
+	"PP_突变定义", "PP_突变详情",
+	"PP_References", "PP_References other1", "PP_References other2",
+	"PP_disGroup",
+	"中文-疾病名称", "中文-疾病背景", "中文-治疗与干预", "中文-突变判定",
+	"遗传模式",
+	"发病率",
+	"发病率-EN",
+	"中文-突变详情",
+	"中文-疾病简介",
+	"英文-疾病简介",
+	"参考文献-原有", "参考文献-新增",
+	"自动化突变判定", "证据分类",
+	"英文-疾病名称", "英文-疾病背景", "英文-治疗与干预", "英文-突变判定",
+	"英文-突变详情",
+	"Reference", "Evidence Classification",
+	"Reference-final-Info",
+	"备注",
+	"note2",
+	"Database",
+}
+
 func main() {
 	flag.Parse()
 	if *inputData == "" || *outputExcel == "" {
@@ -48,6 +79,9 @@ func main() {
 
 	for _, dataHash := range mapDb.Data {
 		outputRow := outputSheet.AddRow()
+		for _, title := range newLineList {
+			dataHash[title] = newLine.ReplaceAllString(dataHash[title], "\n")
+		}
 		for _, title := range mapDb.Title {
 			outputRow.AddCell().SetString(dataHash[title])
 		}
