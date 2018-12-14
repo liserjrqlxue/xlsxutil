@@ -18,7 +18,7 @@ func getJson(url string, target interface{}) error {
 }
 
 // anno cnv
-func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
+func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, anno bool) error {
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
 	var keysList []string
@@ -57,7 +57,10 @@ func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) erro
 				dataHash[keysList[j]] = text
 			}
 
-			dataHash = updateExonCnv(dataHash)
+			if anno {
+				dataHash = updateExonCnv(dataHash)
+			}
+
 			for _, title := range keysList {
 				outputCell := outputRow.AddCell()
 				outputCell.SetString(dataHash[title])

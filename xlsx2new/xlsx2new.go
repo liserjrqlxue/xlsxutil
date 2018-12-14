@@ -174,8 +174,8 @@ func main() {
 		if sheetName == "filter_variants" {
 			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
 			simple_util.CheckErr(err)
-		} else if sheetName == "exon_cnv" && *annoCnv {
-			err = annoExonCnv(*sheet, outputXlsx, sheetName)
+		} else if sheetName == "exon_cnv" {
+			err = annoExonCnv(*sheet, outputXlsx, sheetName, *annoCnv)
 			simple_util.CheckErr(err)
 		} else {
 			err = copySheet4(*sheet, outputXlsx, sheetName)
