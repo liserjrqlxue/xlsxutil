@@ -32,6 +32,15 @@ func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) erro
 				keysList = append(keysList, key)
 				keysHash[key] = true
 			}
+			// change CopyNum to Copy_Num
+			if !keysHash["Copy_Num"] && keysHash["CopyNum"] {
+				keysHash["Copy_Num"] = true
+				for i, title := range keysList {
+					if title == "CopyNum" {
+						keysList[i] = "Copy_Num"
+					}
+				}
+			}
 			for _, title := range exonCnvAdd {
 				if !keysHash[title] {
 					keysList = append(keysList, title)
