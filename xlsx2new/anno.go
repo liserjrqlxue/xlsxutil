@@ -151,8 +151,8 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 					text, _ := cell.FormattedValue()
 					dataHash[keysList[j]] = text
 				}
-				dataHash = updateSnv(dataHash)
 				dataHash = addGnomAD(tbx, dataHash)
+				dataHash = updateSnv(dataHash)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
 			}(i)
