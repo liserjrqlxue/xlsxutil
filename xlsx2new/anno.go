@@ -2,11 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
+	"regexp"
 	"strconv"
 	"strings"
+)
+
+var (
+	chrPrefix = regexp.MustCompile("^chr")
 )
 
 func getJson(url string, target interface{}) error {
@@ -103,39 +111,65 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 	return dataHash
 }
 
+type empty interface{}
+
 // anno snv
 func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string) error {
+	db := "D:\\data\\gnomad-public\\release\\2.1\\vcf\\exomes\\gnomad.exomes.r2.1.sites.vcf.gz"
+	tbx, err := GnomAD.New(db)
+	simple_util.CheckErr(err)
+	defer simple_util.DeferClose(tbx)
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
+
+	nrow := len(sheet.Rows)
+	if nrow < 1 {
+		return errors.New("empty sheet!")
+	}
+
+	// title
 	var keysList []string
-	for i, row := range sheet.Rows {
-		var outputRow = outputSheet.AddRow()
-		if i == 0 {
-			for _, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				keysList = append(keysList, strings.Split(text, "(")[0])
-			}
-			for _, title := range titleList {
-				//axis := positionToAxis(i, j)
-				outputCell := outputRow.AddCell()
-				outputCell.SetString(title)
-			} //write title
-		} else {
-			var dataHash = make(map[string]string)
-			for j, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				dataHash[keysList[j]] = text
-			}
+	var outputRow = outputSheet.AddRow()
+	for _, cell := range sheet.Rows[0].Cells {
+		text, _ := cell.FormattedValue()
+		keysList = append(keysList, strings.Split(text, "(")[0])
+	}
+	for _, title := range titleList {
+		//axis := positionToAxis(i, j)
+		outputCell := outputRow.AddCell()
+		outputCell.SetString(title)
+	}
 
-			dataHash = updateSnv(dataHash)
-
-			// write to sheet
+	if nrow > 1 {
+		sem := make(chan empty, nrow-1)
+		var dataHashArray = make([]map[string]string, nrow-1)
+		for i := 1; i < nrow; i++ {
+			go func(i int) {
+				var dataHash = make(map[string]string)
+				row := sheet.Rows[i]
+				for j, cell := range row.Cells {
+					text, _ := cell.FormattedValue()
+					dataHash[keysList[j]] = text
+				}
+				dataHash = updateSnv(dataHash)
+				dataHash = addGnomAD(tbx, dataHash)
+				dataHashArray[i-1] = dataHash
+				sem <- new(empty)
+			}(i)
+		}
+		for i := 0; i < nrow-1; i++ {
+			<-sem
+		}
+		for i := 0; i < nrow-1; i++ {
+			var outputRow = outputSheet.AddRow()
+			dataHash := dataHashArray[i]
 			for _, title := range titleList {
 				outputCell := outputRow.AddCell()
 				outputCell.SetString(dataHash[title])
 			}
 		}
 	}
+	fmt.Printf("anno %d count\n", nrow)
 	return nil
 }
 
@@ -369,4 +403,49 @@ func excel2MapMap(excelPath, sheetName, key string) map[string]map[string]string
 		}
 	}
 	return db
+}
+
+func addGnomAD(tbx *GnomAD.Tbx, inputData map[string]string) map[string]string {
+	chr := inputData["#Chr"]
+	chr = chrPrefix.ReplaceAllString(chr, "")
+	start, err := strconv.Atoi(inputData["Start"])
+	simple_util.CheckErr(err)
+	stop, err := strconv.Atoi(inputData["Stop"])
+	qStart := start
+	if start == stop {
+		qStart -= 1
+	}
+	vals := tbx.Query(chr, start-1, stop)
+	if vals == nil {
+		return inputData
+	}
+
+	ref := inputData["Ref"]
+	if ref == "." {
+		ref = ""
+	}
+	alt := inputData["Call"]
+	if alt == "." {
+		alt = ""
+	}
+
+	hit := tbx.Hit(chr, start, stop, ref, alt, vals)
+	if hit.Info == nil {
+		return inputData
+	}
+	if hit.Info["AF"] == nil {
+		inputData["GnomAD AF"] = ""
+	} else {
+		inputData["GnomAD AF"] = strconv.FormatFloat(float64(hit.Info["AF"].(float32)), 'f', -1, 32)
+	}
+	if hit.Info["AF_eas"] == nil {
+		inputData["GnomAD EAS AF"] = ""
+	} else {
+		inputData["GnomAD EAS AF"] = strconv.FormatFloat(float64(hit.Info["AF_eas"].(float32)), 'f', -1, 32)
+	}
+	inputData["GnomAD HomoAlt Count"] = strconv.Itoa(hit.Info["nhomalt"].(int))
+	inputData["GnomAD EAS HomoAlt Count"] = strconv.Itoa(hit.Info["nhomalt"].(int))
+	return inputData
+	//fmt.Println(chr,"\t",start,"\t",stop,"\t",ref,"\t",alt,"\t:\t",hit.Info["AF"],hit.Info["AF_eas"])
+	//fmt.Println(hit)//.Chrom,hit.Start,hit.End,hit.Ref,hit.Alt)
 }
