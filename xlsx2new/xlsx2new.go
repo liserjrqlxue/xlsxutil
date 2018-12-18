@@ -127,6 +127,7 @@ var exonCnvAdd = []string{
 }
 
 func main() {
+	t0 := time.Now()
 	flag.Parse()
 	if *help || *outputExcel == "" {
 		flag.Usage()
@@ -169,11 +170,16 @@ func main() {
 	// 复制工作表
 	// 遍历input.xlsx的工作表
 	sheetMap := inputXlsx.Sheet
+
 	for sheetName, sheet := range sheetMap {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
+			t0 := time.Now()
 			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
+			t1 := time.Now()
+			fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 			simple_util.CheckErr(err)
+
 		} else if sheetName == "exon_cnv" {
 			err = annoExonCnv(*sheet, outputXlsx, sheetName, *annoCnv)
 			simple_util.CheckErr(err)
@@ -182,7 +188,10 @@ func main() {
 			simple_util.CheckErr(err)
 		}
 	}
+	t1 := time.Now()
+	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 	// 保存到 outputExcel
 	err = outputXlsx.Save(*outputExcel)
+	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 	simple_util.CheckErr(err)
 }
