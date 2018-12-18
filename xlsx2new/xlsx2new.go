@@ -16,6 +16,7 @@ import (
 var (
 	ex, _  = os.Executable()
 	exPath = filepath.Dir(ex)
+	pSep   = string(os.PathSeparator)
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 	)
 	acmgExcel = flag.String(
 		"acmg",
-		exPath+string(os.PathSeparator)+"崔淑歌 文献 ACMG推荐59个基因更新-20181030.xlsx",
+		exPath+pSep+"崔淑歌 文献 ACMG推荐59个基因更新-20181030.xlsx",
 		"database of ACMG",
 	)
 	acmgSheet = flag.String(
@@ -46,7 +47,7 @@ var (
 	)
 	geneDbExcel = flag.String(
 		"geneDb",
-		exPath+string(os.PathSeparator)+"基因库0906（最终版）.xlsx",
+		exPath+pSep+"基因库0906（最终版）.xlsx",
 		"database of 突变频谱",
 	)
 	geneDbSheet = flag.String(
@@ -56,7 +57,7 @@ var (
 	)
 	titleTxt = flag.String(
 		"title",
-		exPath+string(os.PathSeparator)+"etc"+string(os.PathSeparator)+"title.txt",
+		exPath+pSep+"etc"+pSep+"title.txt",
 		"output title list",
 	)
 	annoCnv = flag.Bool(
@@ -64,6 +65,15 @@ var (
 		false,
 		"anno exon_cnv sheet with disease of target gene",
 	)
+	annoGnomAD = flag.Bool(
+		"annoGnomAD",
+		false,
+		"flag to update GnomAD info",
+	)
+	gnomAD = flag.String(
+		"gnomAD",
+		exPath+pSep+"db"+pSep+"gnomad.exomes.r2.1.sites.vcf.gz",
+		"gnomAD file path")
 )
 
 var long2short = map[string]string{
@@ -126,6 +136,14 @@ var exonCnvAdd = []string{
 	"SystemSort",
 }
 
+type annSheetArgs struct {
+	InputSheet  *xlsx.Sheet
+	outputExcel *xlsx.File
+	sheetName   string
+	titleList   []string
+	annoInfo    map[string]interface{}
+}
+
 func main() {
 	t0 := time.Now()
 	flag.Parse()
@@ -175,7 +193,7 @@ func main() {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
 			t0 := time.Now()
-			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
+			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList, *annoGnomAD, *gnomAD)
 			t1 := time.Now()
 			fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 			simple_util.CheckErr(err)

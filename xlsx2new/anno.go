@@ -114,11 +114,15 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 type empty interface{}
 
 // anno snv
-func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string) error {
-	db := "D:\\data\\gnomad-public\\release\\2.1\\vcf\\exomes\\gnomad.exomes.r2.1.sites.vcf.gz"
-	tbx, err := GnomAD.New(db)
-	simple_util.CheckErr(err)
-	defer simple_util.DeferClose(tbx)
+func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string, annoGnomAD bool, gnomAD string) error {
+	var tbx *GnomAD.Tbx
+	var err error
+	if annoGnomAD {
+		tbx, err = GnomAD.New(gnomAD)
+		simple_util.CheckErr(err)
+		defer simple_util.DeferClose(tbx)
+	}
+
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
 
@@ -151,7 +155,9 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 					text, _ := cell.FormattedValue()
 					dataHash[keysList[j]] = text
 				}
-				dataHash = addGnomAD(tbx, dataHash)
+				if annoGnomAD {
+					dataHash = addGnomAD(tbx, dataHash)
+				}
 				dataHash = updateSnv(dataHash)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
