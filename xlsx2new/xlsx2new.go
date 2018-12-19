@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
 	"net/http"
@@ -149,6 +150,8 @@ type annSheetArgs struct {
 	annoInfo    map[string]interface{}
 }
 
+var tbx *GnomAD.Tbx
+
 func main() {
 	t0 := time.Now()
 	flag.Parse()
@@ -159,6 +162,12 @@ func main() {
 
 	inputXlsx, err := xlsx.OpenFile(*inputExcel)
 	simple_util.CheckErr(err)
+
+	if *annoGnomAD {
+		tbx, err = GnomAD.New(*gnomAD)
+		simple_util.CheckErr(err)
+		defer simple_util.DeferClose(tbx)
+	}
 
 	// 读取输出title list
 	titleList := simple_util.File2Array(*titleTxt)
@@ -198,7 +207,7 @@ func main() {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
 			t0 := time.Now()
-			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList, *annoGnomAD, *gnomAD)
+			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
 			t1 := time.Now()
 			fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 			simple_util.CheckErr(err)

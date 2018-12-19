@@ -114,14 +114,7 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 type empty interface{}
 
 // anno snv
-func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string, annoGnomAD bool, gnomAD string) error {
-	var tbx *GnomAD.Tbx
-	var err error
-	if annoGnomAD {
-		tbx, err = GnomAD.New(gnomAD)
-		simple_util.CheckErr(err)
-		defer simple_util.DeferClose(tbx)
-	}
+func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string) error {
 
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
@@ -155,7 +148,7 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 					text, _ := cell.FormattedValue()
 					dataHash[keysList[j]] = text
 				}
-				if annoGnomAD {
+				if *annoGnomAD {
 					dataHash = addGnomAD(tbx, dataHash)
 				}
 				dataHash = updateSnv(dataHash)
@@ -309,6 +302,7 @@ func updateSnv(dataHash map[string]string) map[string]string {
 	}
 
 	// 自动化判断
+	dataHash = addACMG2015(dataHash)
 	dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
 	return dataHash
 }
