@@ -82,6 +82,11 @@ var long2short = map[string]string{
 	"Uncertain Significance": "VUS",
 	"Likely Benign":          "LB",
 	"Benign":                 "B",
+	"P":                      "P",
+	"LP":                     "LP",
+	"VUS":                    "VUS",
+	"LB":                     "LB",
+	"B":                      "B",
 }
 
 var LoF = map[string]int{
