@@ -14,12 +14,14 @@ import (
 	"time"
 )
 
+// os
 var (
 	ex, _  = os.Executable()
 	exPath = filepath.Dir(ex)
 	pSep   = string(os.PathSeparator)
 )
 
+// flag
 var (
 	help = flag.Bool(
 		"help",
@@ -115,10 +117,12 @@ var geneDbHash = map[string]string{
 	//"SystemSort":"SystemSort",
 }
 
+// regexp
 var (
-	isHgmd    = regexp.MustCompile("DM")
-	isClinvar = regexp.MustCompile("Pathogenic|Likely_pathogenic")
-	indexReg  = regexp.MustCompile(`\d+\.\s+`)
+	isHgmd     = regexp.MustCompile("DM")
+	isClinvar  = regexp.MustCompile("Pathogenic|Likely_pathogenic")
+	indexReg   = regexp.MustCompile(`\d+\.\s+`)
+	newlineReg = regexp.MustCompile(`\n+`)
 )
 
 //var leftBracket = regexp.MustCompile("(")
