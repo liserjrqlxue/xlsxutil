@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/liserjrqlxue/acmg2015"
 	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
@@ -90,7 +91,7 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 		}
 		err := getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
 		simple_util.CheckErr(err)
-		disInfo,ok:=diseaseInfo.([]interface{})
+		disInfo, ok := diseaseInfo.([]interface{})
 		if ok && len(disInfo) == 11 {
 			for i, k := range exonCnvAdd {
 				var sep = "\n"
@@ -302,7 +303,7 @@ func updateSnv(dataHash map[string]string) map[string]string {
 	}
 
 	// 自动化判断
-	dataHash = addACMG2015(dataHash)
+	dataHash = acmg2015.AddACMG2015(dataHash)
 	dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
 	return dataHash
 }
