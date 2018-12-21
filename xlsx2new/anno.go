@@ -122,7 +122,7 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 
 	nrow := len(sheet.Rows)
 	if nrow < 1 {
-		return errors.New("empty sheet!")
+		return errors.New("empty sheet")
 	}
 
 	// title
@@ -303,7 +303,9 @@ func updateSnv(dataHash map[string]string) map[string]string {
 	}
 
 	// 自动化判断
-	dataHash = acmg2015.AddACMG2015(dataHash)
+	if *annoACMG {
+		dataHash = acmg2015.AddACMG2015(dataHash)
+	}
 	dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
 	return dataHash
 }

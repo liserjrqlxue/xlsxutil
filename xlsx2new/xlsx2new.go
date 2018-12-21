@@ -76,7 +76,13 @@ var (
 	gnomAD = flag.String(
 		"gnomAD",
 		exPath+pSep+"db"+pSep+"gnomad.exomes.r2.1.sites.vcf.gz",
-		"gnomAD file path")
+		"gnomAD file path",
+	)
+	annoACMG = flag.Bool(
+		"annoACMG",
+		false,
+		"flag to update ACMG info",
+	)
 )
 
 var long2short = map[string]string{
