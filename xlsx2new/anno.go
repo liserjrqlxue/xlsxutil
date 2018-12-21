@@ -79,9 +79,10 @@ func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, anno
 }
 
 func updateExonCnv(dataHash map[string]string) map[string]string {
+	dataHash["OMIM_Gene"] = newlineReg.ReplaceAllLiteralString(dataHash["OMIM_Gene"], ";")
 	geneArray := strings.Split(dataHash["OMIM_Gene"], ";")
 	dataHash["OMIM_Gene"] = strings.Join(geneArray, "\n")
-	var diseaseInfo []string
+	var diseaseInfo interface{}
 	var mergeInfo = make(map[string][]string)
 	for _, gene := range geneArray {
 		if gene == "" || gene == "-" || gene == "." {
@@ -89,15 +90,14 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 		}
 		err := getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
 		simple_util.CheckErr(err)
-		//fmt.Println(len(diseaseInfo))
-		if len(diseaseInfo) == 11 {
+		disInfo,ok:=diseaseInfo.([]interface{})
+		if ok && len(disInfo) == 11 {
 			for i, k := range exonCnvAdd {
 				var sep = "\n"
 				if k == "GeneralizationEN" || k == "GeneralizationCH" {
 					sep = "\n\n"
 				}
-				//fmt.Println("["+k+"]\t["+sep+"]")
-				mergeInfo[k] = append(mergeInfo[k], strings.Join(strings.Split(diseaseInfo[i], "\n"), sep))
+				mergeInfo[k] = append(mergeInfo[k], strings.Join(strings.Split(disInfo[i].(string), "\n"), sep))
 			}
 		}
 	}
