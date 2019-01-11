@@ -253,10 +253,10 @@ func updateSnv(dataHash map[string]string) map[string]string {
 	dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
 	dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
 	dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] // + "|" + dataHash["GnomAD HemiAlt Count"]
-	if len(strings.Split(dataHash["MutationName"], ":"))>1{
-	    dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
-	}else{
-	    dataHash["MutationNameLite"] = dataHash["MutationName"]
+	if len(strings.Split(dataHash["MutationName"], ":")) > 1 {
+		dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
+	} else {
+		dataHash["MutationNameLite"] = dataHash["MutationName"]
 	}
 
 	dataHash["突变频谱"] = geneDb[geneSymbol]
