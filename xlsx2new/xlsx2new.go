@@ -19,6 +19,7 @@ var (
 	ex, _  = os.Executable()
 	exPath = filepath.Dir(ex)
 	pSep   = string(os.PathSeparator)
+	dbPath = exPath + pSep + "db" + pSep
 )
 
 // flag
@@ -50,12 +51,12 @@ var (
 	)
 	geneDbExcel = flag.String(
 		"geneDb",
-		exPath+pSep+"基因库0906（最终版）.xlsx",
+		dbPath+"基因库-更新版基因特征谱-加动态突变-20190110.xlsx",
 		"database of 突变频谱",
 	)
 	geneDbSheet = flag.String(
 		"geneDbSheet",
-		"基因-疾病（隐藏线粒体基因组）",
+		"Sheet1",
 		"sheet name of 突变频谱 database in excel",
 	)
 	titleTxt = flag.String(
@@ -75,7 +76,7 @@ var (
 	)
 	gnomAD = flag.String(
 		"gnomAD",
-		exPath+pSep+"db"+pSep+"gnomad.exomes.r2.1.sites.vcf.gz",
+		dbPath+"gnomad.exomes.r2.1.sites.vcf.gz",
 		"gnomAD file path",
 	)
 	annoACMG = flag.Bool(
@@ -202,7 +203,11 @@ func main() {
 			for j, cell := range row {
 				dataHash[geneDbTitle[j]] = cell
 			}
-			geneDb[dataHash["基因名称"]] = dataHash["突变类型"]
+			if geneDb[dataHash["基因名"]] == "" {
+				geneDb[dataHash["基因名"]] = dataHash["突变/致病多样性-补充/更正"]
+			} else {
+				geneDb[dataHash["基因名"]] = geneDb[dataHash["基因名"]] + ";" + dataHash["突变/致病多样性-补充/更正"]
+			}
 		}
 	}
 
