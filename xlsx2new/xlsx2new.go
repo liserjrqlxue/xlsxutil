@@ -239,6 +239,6 @@ func main() {
 	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 	// 保存到 outputExcel
 	err = outputXlsx.Save(*outputExcel)
-	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 	simple_util.CheckErr(err)
+	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 }
