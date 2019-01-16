@@ -169,6 +169,12 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 			}
 		}
 	}
+	// column hidden
+	for i, col := range outputSheet.Cols {
+		if i >= 78 {
+			col.Hidden = true
+		}
+	}
 	fmt.Printf("anno %d count\n", nrow)
 	return nil
 }
