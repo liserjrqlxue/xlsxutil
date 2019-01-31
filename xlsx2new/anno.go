@@ -152,6 +152,45 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				if *annoGnomAD {
 					dataHash = addGnomAD(tbx, dataHash)
 				}
+				geneSymbol := dataHash["Gene Symbol"]
+				dataHash["突变频谱"] = geneDb[geneSymbol]
+				// add acmg
+				if acmgDb[geneSymbol] != nil {
+					acmgDbGene := acmgDb[geneSymbol]
+					var sep = "\n"
+					systemSort := strings.Split(acmgDbGene["SystemSort"], sep)
+					for i := range systemSort {
+						systemSort[i] = "ACMG"
+					}
+
+					if dataHash["Gene"] == "." {
+						for k, v := range geneDbHash {
+							dataHash[k] = acmgDbGene[v]
+						}
+					} else {
+						for k, v := range geneDbHash {
+							sep = "\n"
+							vArray := strings.Split(acmgDbGene[v], sep)
+							if k == "GeneralizationEN" || k == "GeneralizationCH" {
+								sep = "\n\n"
+							}
+							for _, str := range strings.Split(dataHash[k], sep) {
+								vArray = append(vArray, str)
+							}
+							dataHash[k] = strings.Join(vArray, sep)
+						}
+						sep = "\n"
+						for _, str := range strings.Split(dataHash["SystemSort"], sep) {
+							systemSort = append(systemSort, str)
+						}
+					}
+					dataHash["SystemSort"] = strings.Join(systemSort, sep)
+				}
+
+				// 自动化判断
+				if *annoACMG {
+					dataHash = acmg2015.AddACMG2015(dataHash)
+				}
 				dataHash = updateSnv(dataHash)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
@@ -180,7 +219,6 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 }
 
 func updateSnv(dataHash map[string]string) map[string]string {
-	geneSymbol := dataHash["Gene Symbol"]
 
 	// pHGVS= pHGVS1+"|"+pHGVS3
 	dataHash["pHGVS"] = dataHash["pHGVS1"] + " | " + dataHash["pHGVS3"]
@@ -265,8 +303,6 @@ func updateSnv(dataHash map[string]string) map[string]string {
 		dataHash["MutationNameLite"] = dataHash["MutationName"]
 	}
 
-	dataHash["突变频谱"] = geneDb[geneSymbol]
-
 	dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
 
 	// remove index
@@ -279,43 +315,6 @@ func updateSnv(dataHash map[string]string) map[string]string {
 		dataHash[k] = strings.Join(keys, sep)
 	}
 
-	// add acmg
-	if acmgDb[geneSymbol] != nil {
-		acmgDbGene := acmgDb[geneSymbol]
-		var sep = "\n"
-		systemSort := strings.Split(acmgDbGene["SystemSort"], sep)
-		for i := range systemSort {
-			systemSort[i] = "ACMG"
-		}
-
-		if dataHash["Gene"] == "." {
-			for k, v := range geneDbHash {
-				dataHash[k] = acmgDbGene[v]
-			}
-		} else {
-			for k, v := range geneDbHash {
-				sep = "\n"
-				vArray := strings.Split(acmgDbGene[v], sep)
-				if k == "GeneralizationEN" || k == "GeneralizationCH" {
-					sep = "\n\n"
-				}
-				for _, str := range strings.Split(dataHash[k], sep) {
-					vArray = append(vArray, str)
-				}
-				dataHash[k] = strings.Join(vArray, sep)
-			}
-			sep = "\n"
-			for _, str := range strings.Split(dataHash["SystemSort"], sep) {
-				systemSort = append(systemSort, str)
-			}
-		}
-		dataHash["SystemSort"] = strings.Join(systemSort, sep)
-	}
-
-	// 自动化判断
-	if *annoACMG {
-		dataHash = acmg2015.AddACMG2015(dataHash)
-	}
 	dataHash["自动化判断"] = long2short[dataHash["ACMG"]]
 	return dataHash
 }
