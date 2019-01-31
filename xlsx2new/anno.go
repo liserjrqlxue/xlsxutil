@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/liserjrqlxue/acmg2015"
+	"github.com/liserjrqlxue/anno2xlsx/anno"
 	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
@@ -191,7 +192,8 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 				if *annoACMG {
 					dataHash = acmg2015.AddACMG2015(dataHash)
 				}
-				dataHash = updateSnv(dataHash)
+				//dataHash = updateSnv(dataHash)
+				anno.UpdateSnv(dataHash)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
 			}(i)
