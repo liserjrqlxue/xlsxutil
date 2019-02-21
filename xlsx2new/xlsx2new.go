@@ -84,6 +84,11 @@ var (
 		false,
 		"flag to update ACMG info",
 	)
+	gender = flag.String(
+		"gender",
+		"",
+		"gender of proband",
+	)
 )
 
 var long2short = map[string]string{
@@ -137,6 +142,17 @@ var geneDb = make(map[string]string)
 
 var acmgDb = make(map[string]map[string]string)
 
+var geneDisease = make(map[string][]string)
+var diseaseDb = make(map[string]map[string]string)
+var diseaseKey = []string{
+	"Phenotype MIM number",
+	"Disease NameCH",
+	"Alternative Disease NameEN",
+	"GeneralizationEN",
+	"GeneralizationCH",
+	"SystemSort",
+}
+
 var myClient = &http.Client{Timeout: 10 * time.Second}
 var host = "http://192.168.136.114:9898"
 var exonCnvAdd = []string{
@@ -186,6 +202,17 @@ func main() {
 	// ACMG推荐基因数据库
 	acmgDb = excel2MapMap(*acmgExcel, *acmgSheet, "Gene/Locus")
 
+	// 基因-疾病数据库
+	geneDiseaseDbXlsx, err := excelize.OpenFile(*geneDiseaseDbExcel)
+	simple_util.CheckErr(err)
+	geneDiseaseDb := sheet2mapArray(geneDiseaseDbXlsx, *geneDiseaseSheet)
+	for _, db := range geneDiseaseDb {
+		gene := db["Gene/Locus"]
+		disease := db["Disease NameEN"]
+		geneDisease[gene] = append(geneDisease[gene], disease)
+
+	}
+
 	//acmgDb2:=sheet2mapHash(acmgDbXlsx,*acmgSheet,"Gene/Locus")
 	//fmt.Println(reflect.DeepEqual(acmgDb2,acmgDb))
 
@@ -222,7 +249,7 @@ func main() {
 		fmt.Printf("Copy sheet [%s]\n", sheetName)
 		if sheetName == "filter_variants" {
 			t0 := time.Now()
-			err = annoSheet3(*sheet, outputXlsx, sheetName, titleList)
+			err = annoSheet3(*sheet, outputXlsx, sheetName, *gender, titleList)
 			t1 := time.Now()
 			fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 			simple_util.CheckErr(err)

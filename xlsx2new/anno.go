@@ -116,7 +116,7 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 type empty interface{}
 
 // anno snv
-func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, titleList []string) error {
+func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender string, titleList []string) error {
 
 	outputSheet, err := outputXlsx.AddSheet(sheetName)
 	simple_util.CheckErr(err)
@@ -193,7 +193,7 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, title
 					dataHash = acmg2015.AddACMG2015(dataHash)
 				}
 				//dataHash = updateSnv(dataHash)
-				anno.UpdateSnv(dataHash)
+				anno.UpdateSnv(dataHash, gender)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
 			}(i)
