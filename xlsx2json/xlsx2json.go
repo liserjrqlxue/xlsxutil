@@ -33,7 +33,18 @@ var (
 	sep = flag.String(
 		"sep",
 		"\n",
-		"sep of merge rows")
+		"sep of merge rows",
+	)
+	aes = flag.Bool(
+		"aes",
+		false,
+		"if aes encode",
+	)
+	codeKey = flag.String(
+		"codeKey",
+		"c3d112d6a47a0a04aad2b9d2d2cad266",
+		"codeKey for aes",
+	)
 )
 
 var err error
@@ -57,16 +68,20 @@ func main() {
 			rows := xlsxFh.GetRows(sheetName)
 			var d []byte
 			if *key == "" {
-				_, data := simple_util.ArrayArray2MapArray(rows)
+				_, data := simple_util.Slice2MapArray(rows)
 				d, err = json.MarshalIndent(data, "", "  ")
 				simple_util.CheckErr(err)
 			} else {
-				_, data := simple_util.ArrayArray2MapMapMerge(rows, *key, *sep)
+				_, data := simple_util.Slice2MapMapMerge(rows, *key, *sep)
 				d, err = json.MarshalIndent(data, "", "  ")
 				simple_util.CheckErr(err)
 			}
-			err = simple_util.Json2file(d, fileName)
-			simple_util.CheckErr(err)
+			if *aes {
+				simple_util.Encode2file(fileName+".aes", d, []byte(*codeKey))
+			} else {
+				err = simple_util.Json2file(d, fileName)
+				simple_util.CheckErr(err)
+			}
 		}
 	} else {
 		fileName := *prefix + "." + *sheet + ".json"
@@ -80,7 +95,11 @@ func main() {
 			d, err = json.MarshalIndent(data, "", "  ")
 			simple_util.CheckErr(err)
 		}
-		err = simple_util.Json2file(d, fileName)
-		simple_util.CheckErr(err)
+		if *aes {
+			simple_util.Encode2file(fileName+".aes", d, []byte(*codeKey))
+		} else {
+			err = simple_util.Json2file(d, fileName)
+			simple_util.CheckErr(err)
+		}
 	}
 }
