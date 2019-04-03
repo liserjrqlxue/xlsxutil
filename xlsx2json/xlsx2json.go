@@ -65,7 +65,8 @@ func main() {
 		simple_util.CheckErr(err)
 		for _, sheetName := range xlsxFh.GetSheetMap() {
 			fileName := *prefix + "." + sheetName + ".json"
-			rows := xlsxFh.GetRows(sheetName)
+			rows, err := xlsxFh.GetRows(sheetName)
+			simple_util.CheckErr(err)
 			var d []byte
 			if *key == "" {
 				_, data := simple_util.Slice2MapArray(rows)
