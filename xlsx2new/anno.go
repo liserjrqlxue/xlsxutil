@@ -323,7 +323,8 @@ func updateSnv(dataHash map[string]string) map[string]string {
 
 // copy sheet without change
 func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) error {
-	inputRows := inputXlsx.GetRows(sheetName)
+	inputRows, err := inputXlsx.GetRows(sheetName)
+	simple_util.CheckErr(err)
 	outputXlsx.NewSheet(sheetName)
 	for i, row := range inputRows {
 		for j, cell := range row {
@@ -364,7 +365,8 @@ func copySheet4(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error
 }
 
 func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string {
-	rows := excel.GetRows(sheetName)
+	rows, err := excel.GetRows(sheetName)
+	simple_util.CheckErr(err)
 	var mapArray []map[string]string
 	var title []string
 	for i, row := range rows {
@@ -382,7 +384,8 @@ func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string 
 }
 
 func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[string]string {
-	rows := excel.GetRows(sheetName)
+	rows, err := excel.GetRows(sheetName)
+	simple_util.CheckErr(err)
 	var mapHash = make(map[string]map[string]string)
 	var title []string
 	for i, row := range rows {
