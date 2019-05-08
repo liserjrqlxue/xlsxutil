@@ -92,11 +92,6 @@ func updateSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender stri
 	return nil
 }
 
-func copySheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) (err error) {
-	_, err = outputXlsx.AppendSheet(sheet, sheetName)
-	return
-}
-
 var (
 	isChrX  = regexp.MustCompile(`X`)
 	isChrY  = regexp.MustCompile(`Y`)
