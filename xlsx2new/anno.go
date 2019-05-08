@@ -403,7 +403,8 @@ func excel2MapMap(excelPath, sheetName, key string) map[string]map[string]string
 	inXlsx, err := excelize.OpenFile(excelPath)
 	simple_util.CheckErr(err)
 	var db = make(map[string]map[string]string)
-	rows := inXlsx.GetRows(sheetName)
+	rows, err := inXlsx.GetRows(sheetName)
+	simple_util.CheckErr(err)
 	var title []string
 	for i, row := range rows {
 		if i == 0 {
