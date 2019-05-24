@@ -55,7 +55,7 @@ func main() {
 		case *sheetName:
 			simple_util.CheckErr(filterSheet(*sheet, outputXlsx, sheet.Name, inGene))
 		default:
-			outputXlsx.AppendSheet(*sheet, sheet.Name)
+			//outputXlsx.AppendSheet(*sheet, sheet.Name)
 		}
 	}
 	simple_util.CheckErr(outputXlsx.Save(*output))
@@ -79,7 +79,6 @@ func filterSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, inGe
 	}
 	if nrow > 1 {
 		for i := 1; i < nrow; i++ {
-			var outputRow = outputSheet.AddRow()
 			var item = make(map[string]string)
 			row := sheet.Rows[i]
 			for j, cell := range row.Cells {
@@ -88,6 +87,7 @@ func filterSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, inGe
 			}
 			gene := item["Gene Symbol"]
 			if inGene[gene] {
+				var outputRow = outputSheet.AddRow()
 				for _, key := range keysList {
 					outputRow.AddCell().SetString(item[key])
 				}
