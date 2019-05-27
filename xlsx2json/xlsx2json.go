@@ -73,7 +73,7 @@ func main() {
 				d, err = json.MarshalIndent(data, "", "  ")
 				simple_util.CheckErr(err)
 			} else {
-				_, data := simple_util.Slice2MapMapMerge(rows, *key, *sep)
+				_, data := simple_util.Slice2MapMapMergeTrim(rows, *key, *sep)
 				d, err = json.MarshalIndent(data, "", "  ")
 				simple_util.CheckErr(err)
 			}
@@ -92,7 +92,7 @@ func main() {
 			d, err = json.MarshalIndent(data, "", "  ")
 			simple_util.CheckErr(err)
 		} else {
-			_, data := simple_util.Sheet2MapMapMerge(*xlsx, *sheet, *key, *sep)
+			_, data := simple_util.Sheet2MapMapMergeTrim(*xlsx, *sheet, *key, *sep)
 			d, err = json.MarshalIndent(data, "", "  ")
 			simple_util.CheckErr(err)
 		}
