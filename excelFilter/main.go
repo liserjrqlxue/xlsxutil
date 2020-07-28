@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 )

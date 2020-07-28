@@ -3,15 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/360EntSecGroup-Skylar/excelize"
-	"github.com/liserjrqlxue/annogo/GnomAD"
-	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"github.com/liserjrqlxue/annogo/GnomAD"
+	"github.com/liserjrqlxue/simple-util"
+	"github.com/tealeg/xlsx"
 )
 
 // os
