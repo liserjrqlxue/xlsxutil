@@ -45,7 +45,7 @@ func main() {
 	}
 	var xlsxF = xlsxUtil.OpenFile(*input)
 	for sheetName, sheet := range xlsxF.Sheet {
-		var w = osUtil.Create(*prefix + "." + sheetName + ".xlsx")
+		var w = osUtil.Create(*prefix + "." + sheetName + ".txt")
 		defer simpleUtil.DeferClose(w)
 		for _, row := range sheet.Rows {
 			var rowV []string
