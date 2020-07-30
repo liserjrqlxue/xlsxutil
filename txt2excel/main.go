@@ -53,6 +53,11 @@ func main() {
 			sheetNames = append(sheetNames, path)
 			sheetNamesMap[path] = true
 		}
+	} else {
+		sheetNames = strings.Split(*sheetName, ",")
+		for _, name := range sheetNames {
+			sheetNamesMap[name] = true
+		}
 	}
 	if len(sheetNamesMap) != len(sheetNames) || len(sheetNames) != len(inputList) {
 		panic("sheetNames error!")
