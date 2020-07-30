@@ -1,50 +1,62 @@
 package main
 
 import (
-	"encoding/csv"
-	"fmt"
-	"github.com/tealeg/xlsx"
+	"flag"
 	"os"
 	"regexp"
-	"strconv"
+
+	"github.com/liserjrqlxue/goUtil/fmtUtil"
+	"github.com/liserjrqlxue/goUtil/osUtil"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	"github.com/liserjrqlxue/goUtil/xlsxUtil"
+)
+
+var (
+	input = flag.String(
+		"input",
+		"",
+		"input excel",
+	)
+	prefix = flag.String(
+		"prefix",
+		"",
+		"output prefix, default is -xlsx",
+	)
+	sep = flag.String(
+		"sep",
+		"\t",
+		"output sep",
+	)
+)
+var (
+	reg1 = regexp.MustCompile("\r\n")
+	reg2 = regexp.MustCompile("\n")
+	reg3 = regexp.MustCompile("\t")
 )
 
 func main() {
-	var xlsxPath, prefix string
-	if len(os.Args) > 2 {
-		xlsxPath = os.Args[1]
-		prefix = os.Args[2]
-	} else {
-		fmt.Println(os.Args[0], ".xlsx", "prefix.i.tsv")
+	flag.Parse()
+	if *input == "" {
+		flag.Usage()
 		os.Exit(1)
 	}
-	mySlice, e := xlsx.FileToSlice(xlsxPath)
-	check(e)
-
-	reg1, e := regexp.Compile("\r\n")
-	reg2, e := regexp.Compile("\n")
-	reg3, e := regexp.Compile("\t")
-	check(e)
-	for i, myTsv := range mySlice {
-		if len(myTsv) == 0 {
-			continue
-		}
-		file, e := os.Create(prefix + "." + strconv.Itoa(i) + ".tsv")
-		check(e)
-		defer file.Close()
-
-		writer := csv.NewWriter(file)
-		writer.Comma = '\t'
-		defer writer.Flush()
-
-		for _, value := range myTsv {
-			for k, cell := range value {
-				value[k] = reg1.ReplaceAllString(cell, "[n]")
-				value[k] = reg2.ReplaceAllString(value[k], "[n]")
-				value[k] = reg3.ReplaceAllString(value[k], "[\\t]")
+	if *prefix == "" {
+		*prefix = *input
+	}
+	var xlsxF = xlsxUtil.OpenFile(*input)
+	for sheetName, sheet := range xlsxF.Sheet {
+		var w = osUtil.Create(*prefix + "." + sheetName + ".xlsx")
+		defer simpleUtil.DeferClose(w)
+		for _, row := range sheet.Rows {
+			var rowV []string
+			for _, cell := range row.Cells {
+				var value = cell.Value
+				value = reg1.ReplaceAllString(value, "<br/>")
+				value = reg2.ReplaceAllString(value, "<br/>")
+				value = reg3.ReplaceAllString(value, "&#9;")
+				rowV = append(rowV, value)
 			}
-			e := writer.Write(value)
-			check(e)
+			fmtUtil.FprintStringArray(w, rowV, *sep)
 		}
 	}
 }
