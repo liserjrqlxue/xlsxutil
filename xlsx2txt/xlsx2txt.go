@@ -5,10 +5,10 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/liserjrqlxue/goUtil/fmtUtil"
 	"github.com/liserjrqlxue/goUtil/osUtil"
 	"github.com/liserjrqlxue/goUtil/simpleUtil"
-	"github.com/liserjrqlxue/goUtil/xlsxUtil"
 )
 
 var (
@@ -43,18 +43,18 @@ func main() {
 	if *prefix == "" {
 		*prefix = *input
 	}
-	var xlsxF = xlsxUtil.OpenFile(*input)
-	for sheetName, sheet := range xlsxF.Sheet {
+	var xlsxF = simpleUtil.HandleError(excelize.OpenFile(*input)).(*excelize.File)
+	for sheetName := range xlsxF.Sheet {
 		var w = osUtil.Create(*prefix + "." + sheetName + ".txt")
 		defer simpleUtil.DeferClose(w)
-		for _, row := range sheet.Rows {
+		var rows = simpleUtil.HandleError(xlsxF.GetRows(sheetName)).([][]string)
+		for _, row := range rows {
 			var rowV []string
-			for _, cell := range row.Cells {
-				var value = cell.Value
-				value = reg1.ReplaceAllString(value, "<br/>")
-				value = reg2.ReplaceAllString(value, "<br/>")
-				value = reg3.ReplaceAllString(value, "&#9;")
-				rowV = append(rowV, value)
+			for _, cell := range row {
+				cell = reg1.ReplaceAllString(cell, "<br/>")
+				cell = reg2.ReplaceAllString(cell, "<br/>")
+				cell = reg3.ReplaceAllString(cell, "&#9;")
+				rowV = append(rowV, cell)
 			}
 			fmtUtil.FprintStringArray(w, rowV, *sep)
 		}
