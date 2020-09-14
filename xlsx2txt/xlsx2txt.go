@@ -46,7 +46,6 @@ func main() {
 	var xlsxF = simpleUtil.HandleError(excelize.OpenFile(*input)).(*excelize.File)
 	for sheetName := range xlsxF.Sheet {
 		var w = osUtil.Create(*prefix + "." + sheetName + ".txt")
-		defer simpleUtil.DeferClose(w)
 		var rows = simpleUtil.HandleError(xlsxF.GetRows(sheetName)).([][]string)
 		for _, row := range rows {
 			var rowV []string
@@ -58,11 +57,6 @@ func main() {
 			}
 			fmtUtil.FprintStringArray(w, rowV, *sep)
 		}
-	}
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
+		simpleUtil.DeferClose(w)
 	}
 }
