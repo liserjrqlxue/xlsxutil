@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/liserjrqlxue/acmg2015"
 	"github.com/liserjrqlxue/anno2xlsx/v2/anno"
 	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
-	"regexp"
-	"strconv"
-	"strings"
+	"github.com/xuri/excelize/v2"
 )
 
 var (

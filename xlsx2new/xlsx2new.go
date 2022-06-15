@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
 	"github.com/tealeg/xlsx"
+	"github.com/xuri/excelize/v2"
 )
 
 // os
@@ -220,7 +220,8 @@ func main() {
 	// 突变频谱数据库
 	geneDbXlsx, err := excelize.OpenFile(*geneDbExcel)
 	simple_util.CheckErr(err)
-	geneDbRows := geneDbXlsx.GetRows(*geneDbSheet)
+	geneDbRows, err := geneDbXlsx.GetRows(*geneDbSheet)
+	simple_util.CheckErr(err)
 	var geneDbTitle []string
 
 	for i, row := range geneDbRows {

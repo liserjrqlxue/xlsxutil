@@ -5,10 +5,10 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/liserjrqlxue/goUtil/fmtUtil"
 	"github.com/liserjrqlxue/goUtil/osUtil"
 	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	"github.com/xuri/excelize/v2"
 )
 
 var (
@@ -44,7 +44,7 @@ func main() {
 		*prefix = *input
 	}
 	var xlsxF = simpleUtil.HandleError(excelize.OpenFile(*input)).(*excelize.File)
-	for sheetName := range xlsxF.Sheet {
+	for _, sheetName := range xlsxF.GetSheetMap() {
 		var w = osUtil.Create(*prefix + "." + sheetName + ".txt")
 		var rows = simpleUtil.HandleError(xlsxF.GetRows(sheetName)).([][]string)
 		for _, row := range rows {
