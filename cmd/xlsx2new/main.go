@@ -60,6 +60,16 @@ var (
 		"Sheet1",
 		"sheet name of 突变频谱 database in excel",
 	)
+	geneDiseaseDbExcel = flag.String(
+		"geneDiseaseDb",
+		dbPath+"基因库-更新版基因特征谱-加动态突变-20190110.xlsx",
+		"database of gene disease",
+	)
+	geneDiseaseSheet = flag.String(
+		"geneDiseaseSheet",
+		"Sheet1",
+		"sheet name of gene disease database in excel",
+	)
 	titleTxt = flag.String(
 		"title",
 		exPath+pSep+"etc"+pSep+"title.txt",

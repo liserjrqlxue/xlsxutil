@@ -191,7 +191,8 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender strin
 
 				// 自动化判断
 				if *annoACMG {
-					dataHash = acmg2015.AddACMG2015(dataHash)
+					acmg2015.AddEvidences(dataHash)
+					dataHash["ACMG"] = acmg2015.PredACMG2015(dataHash, true)
 				}
 				//dataHash = updateSnv(dataHash)
 				anno.UpdateSnv(dataHash, gender)

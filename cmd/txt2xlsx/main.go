@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	"os"
 	"regexp"
+
+	simple_util "github.com/liserjrqlxue/simple-util"
+	"github.com/tealeg/xlsx"
 )
 
 // flag
@@ -71,18 +72,18 @@ func main() {
 	outputSheet, err := outputXlsx.AddSheet(*sheetName)
 	simple_util.CheckErr(err)
 
-	mapDb := simple_util.File2MapDb(*inputData, *sep)
+	dataArray, titleList := simple_util.File2MapArray(*inputData, *sep, nil)
 	outputRow := outputSheet.AddRow()
-	for _, title := range mapDb.Title {
+	for _, title := range titleList {
 		outputRow.AddCell().SetString(title)
 	}
 
-	for _, dataHash := range mapDb.Data {
+	for _, dataHash := range dataArray {
 		outputRow := outputSheet.AddRow()
 		for _, title := range newLineList {
 			dataHash[title] = newLine.ReplaceAllString(dataHash[title], "\n")
 		}
-		for _, title := range mapDb.Title {
+		for _, title := range titleList {
 			outputRow.AddCell().SetString(dataHash[title])
 		}
 	}
