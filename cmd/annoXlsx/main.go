@@ -1,22 +1,20 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	"os"
 	"path/filepath"
+
+	"github.com/liserjrqlxue/simple-util"
+	"github.com/xuri/excelize/v2"
 )
 
-// os
 var (
 	ex, _  = os.Executable()
 	exPath = filepath.Dir(ex)
 	pSep   = string(os.PathSeparator)
 )
 
-// flag
 var (
 	input = flag.String(
 		"input",
@@ -60,65 +58,80 @@ func main() {
 		*output = *input + ".anno.xlsx"
 	}
 
-	geneXlsx, err := xlsx.OpenFile(*genelist)
-	var inGeneList = make(map[string]bool)
-	rows := geneXlsx.Sheet[*geneSheet].Rows
-	for _, row := range rows {
-		inGeneList[row.Cells[0].Value] = true
-	}
-
-	inputXlsx, err := xlsx.OpenFile(*input)
+	geneXlsx, err := excelize.OpenFile(*genelist)
 	simple_util.CheckErr(err)
-
-	outputXlsx := xlsx.NewFile()
-
-	for _, sheet := range inputXlsx.Sheets {
-		switch sheet.Name {
-		case *annoSheet:
-			simple_util.CheckErr(updateSheet(*sheet, outputXlsx, inGeneList))
-		default:
-			_, err := outputXlsx.AppendSheet(*sheet, sheet.Name)
-			simple_util.CheckErr(err)
+	var inGeneList = make(map[string]bool)
+	rows, err := geneXlsx.GetRows(*geneSheet)
+	simple_util.CheckErr(err)
+	for _, row := range rows {
+		if len(row) > 0 {
+			inGeneList[row[0]] = true
 		}
 	}
-	simple_util.CheckErr(outputXlsx.Save(*output))
-}
 
-func updateSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, inGeneList map[string]bool) error {
-	outputSheet, err := outputXlsx.AddSheet(sheet.Name)
+	inputXlsx, err := excelize.OpenFile(*input)
 	simple_util.CheckErr(err)
 
-	nrow := len(sheet.Rows)
+	outputXlsx := excelize.NewFile()
+
+	for _, sheetName := range inputXlsx.GetSheetList() {
+		if sheetName == *annoSheet {
+			updateSheet(inputXlsx, outputXlsx, sheetName, inGeneList)
+		} else {
+			copySheet(inputXlsx, outputXlsx, sheetName)
+		}
+	}
+	simple_util.CheckErr(outputXlsx.SaveAs(*output))
+}
+
+func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
+	rows, err := inputXlsx.GetRows(sheetName)
+	simple_util.CheckErr(err)
+	outputXlsx.NewSheet(sheetName)
+	for i, row := range rows {
+		for j, cell := range row {
+			axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+			outputXlsx.SetCellValue(sheetName, axis, cell)
+		}
+	}
+}
+
+func updateSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, inGeneList map[string]bool) {
+	rows, err := inputXlsx.GetRows(sheetName)
+	simple_util.CheckErr(err)
+
+	nrow := len(rows)
 	if nrow < 1 {
-		return errors.New("error sheet")
+		return
 	}
 
+	outputXlsx.NewSheet(sheetName)
 	var keysList []string
-	var outputRow = outputSheet.AddRow()
-	for _, cell := range sheet.Rows[0].Cells {
-		text, _ := cell.FormattedValue()
-		keysList = append(keysList, text)
-		outputRow.AddCell().SetString(text)
+	for j, cell := range rows[0] {
+		keysList = append(keysList, cell)
+		axis, _ := excelize.CoordinatesToCellName(j+1, 1)
+		outputXlsx.SetCellValue(sheetName, axis, cell)
 	}
-	outputRow.AddCell().SetString(*annoTitle)
+	axis, _ := excelize.CoordinatesToCellName(len(keysList)+1, 1)
+	outputXlsx.SetCellValue(sheetName, axis, *annoTitle)
 	keysList = append(keysList, *annoTitle)
 
 	if nrow > 1 {
 		for i := 1; i < nrow; i++ {
-			var outputRow = outputSheet.AddRow()
 			var item = make(map[string]string)
-			row := sheet.Rows[i]
-			for j, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				item[keysList[j]] = text
+			row := rows[i]
+			for j, cell := range row {
+				if j < len(keysList) {
+					item[keysList[j]] = cell
+				}
 			}
 			if inGeneList[item["Gene Symbol"]] {
 				item[*annoTitle] = "是"
 			}
-			for _, key := range keysList {
-				outputRow.AddCell().SetString(item[key])
+			for j, key := range keysList {
+				axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+				outputXlsx.SetCellValue(sheetName, axis, item[key])
 			}
 		}
 	}
-	return nil
 }

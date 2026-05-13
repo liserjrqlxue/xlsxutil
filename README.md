@@ -72,8 +72,7 @@ excelFilter -input variants.xlsx -gene gene.list -output filtered.xlsx
 
 ## 依赖
 
-- [github.com/tealeg/xlsx](https://github.com/tealeg/xlsx) - Excel 文件读写
-- [github.com/xuri/excelize/v2](https://github.com/xuri/excelize) - Excel 文件处理
+- [github.com/xuri/excelize/v2](https://github.com/xuri/excelize) - Excel 文件读写和处理
 - [github.com/liserjrqlxue/simple-util](https://github.com/liserjrqlxue/simple-util) - 工具函数库
 
 ## 许可证

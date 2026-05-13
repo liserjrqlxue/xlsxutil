@@ -5,11 +5,10 @@ import (
 	"os"
 	"regexp"
 
-	simple_util "github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
+	"github.com/liserjrqlxue/simple-util"
+	"github.com/xuri/excelize/v2"
 )
 
-// flag
 var (
 	outputExcel = flag.String(
 		"excel",
@@ -33,12 +32,10 @@ var (
 	)
 )
 
-// regexp
 var (
 	newLine = regexp.MustCompile(`\[\n\]`)
 )
 
-// newline break list
 var newLineList = []string{
 	"PP_interpretation", "PP_mutation information",
 	"PP_突变定义", "PP_突变详情",
@@ -68,26 +65,26 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
-	outputXlsx := xlsx.NewFile()
-	outputSheet, err := outputXlsx.AddSheet(*sheetName)
-	simple_util.CheckErr(err)
+	outputXlsx := excelize.NewFile()
+	outputXlsx.NewSheet(*sheetName)
 
 	dataArray, titleList := simple_util.File2MapArray(*inputData, *sep, nil)
-	outputRow := outputSheet.AddRow()
-	for _, title := range titleList {
-		outputRow.AddCell().SetString(title)
+
+	for j, title := range titleList {
+		axis, _ := excelize.CoordinatesToCellName(j+1, 1)
+		outputXlsx.SetCellValue(*sheetName, axis, title)
 	}
 
-	for _, dataHash := range dataArray {
-		outputRow := outputSheet.AddRow()
+	for i, dataHash := range dataArray {
 		for _, title := range newLineList {
 			dataHash[title] = newLine.ReplaceAllString(dataHash[title], "\n")
 		}
-		for _, title := range titleList {
-			outputRow.AddCell().SetString(dataHash[title])
+		for j, title := range titleList {
+			axis, _ := excelize.CoordinatesToCellName(j+1, i+2)
+			outputXlsx.SetCellValue(*sheetName, axis, dataHash[title])
 		}
 	}
 
-	err = outputXlsx.Save(*outputExcel)
+	err := outputXlsx.SaveAs(*outputExcel)
 	simple_util.CheckErr(err)
 }

@@ -1,18 +1,17 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/liserjrqlxue/simple-util"
+	"github.com/xuri/excelize/v2"
 )
 
-// flag
 var (
 	input = flag.String(
 		"input",
@@ -40,56 +39,57 @@ func main() {
 	if *output == "" {
 		*output = *input + ".fixHemi.xlsx"
 	}
-	inputXlsx, err := xlsx.OpenFile(*input)
+	inputXlsx, err := excelize.OpenFile(*input)
 	simple_util.CheckErr(err)
-	outputXlsx := xlsx.NewFile()
-	sheetMap := inputXlsx.Sheet
-	for sheetName, sheet := range sheetMap {
-		simple_util.CheckErr(updateSheet(*sheet, outputXlsx, sheetName, *gender))
+	outputXlsx := excelize.NewFile()
+	for _, sheetName := range inputXlsx.GetSheetList() {
+		updateSheet(inputXlsx, outputXlsx, sheetName, *gender)
 	}
-	simple_util.CheckErr(outputXlsx.Save(*output))
+	simple_util.CheckErr(outputXlsx.SaveAs(*output))
 }
 
-func updateSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender string) error {
-	outputSheet, err := outputXlsx.AddSheet(sheetName)
+func updateSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName, gender string) {
+	rows, err := inputXlsx.GetRows(sheetName)
 	simple_util.CheckErr(err)
 
-	nrow := len(sheet.Rows)
+	nrow := len(rows)
 	if nrow < 3 {
-		return errors.New("error sheet")
+		return
 	}
 
+	outputXlsx.NewSheet(sheetName)
+
 	for i := 0; i < 2; i++ {
-		var outputRow = outputSheet.AddRow()
-		for _, cell := range sheet.Rows[i].Cells {
-			text, _ := cell.FormattedValue()
-			outputRow.AddCell().SetString(text)
+		for j, cell := range rows[i] {
+			axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+			outputXlsx.SetCellValue(sheetName, axis, cell)
 		}
 	}
 
 	var keysList []string
-	var outputRow = outputSheet.AddRow()
-	for _, cell := range sheet.Rows[2].Cells {
-		text, _ := cell.FormattedValue()
-		keysList = append(keysList, strings.Split(text, "*(")[0])
-		outputRow.AddCell().SetString(text)
+	for j, cell := range rows[2] {
+		text := strings.Split(cell, "*(")[0]
+		keysList = append(keysList, text)
+		axis, _ := excelize.CoordinatesToCellName(j+1, 3)
+		outputXlsx.SetCellValue(sheetName, axis, cell)
 	}
+
 	if nrow > 3 {
 		for i := 3; i < nrow; i++ {
-			var outputRow = outputSheet.AddRow()
 			var item = make(map[string]string)
-			row := sheet.Rows[i]
-			for j, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				item[keysList[j]] = text
+			row := rows[i]
+			for j, cell := range row {
+				if j < len(keysList) {
+					item[keysList[j]] = cell
+				}
 			}
 			updateHemi(item, gender)
-			for _, key := range keysList {
-				outputRow.AddCell().SetString(item[key])
+			for j, key := range keysList {
+				axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+				outputXlsx.SetCellValue(sheetName, axis, item[key])
 			}
 		}
 	}
-	return nil
 }
 
 var (

@@ -1,16 +1,15 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	_ "net/http/pprof"
 	"os"
 	"strings"
+
+	"github.com/liserjrqlxue/simple-util"
+	"github.com/xuri/excelize/v2"
 )
 
-// flag
 var (
 	input = flag.String(
 		"input",
@@ -48,52 +47,56 @@ func main() {
 		inGene[gene] = true
 	}
 
-	inputXlsx, err := xlsx.OpenFile(*input)
+	inputXlsx, err := excelize.OpenFile(*input)
 	simple_util.CheckErr(err)
-	outputXlsx := xlsx.NewFile()
-	for _, sheet := range inputXlsx.Sheets {
-		switch sheet.Name {
+	outputXlsx := excelize.NewFile()
+	for _, sheet := range inputXlsx.GetSheetList() {
+		switch sheet {
 		case *sheetName:
-			simple_util.CheckErr(filterSheet(*sheet, outputXlsx, sheet.Name, inGene))
+			filterSheet(inputXlsx, outputXlsx, sheet, inGene)
 		default:
-			//outputXlsx.AppendSheet(*sheet, sheet.Name)
 		}
 	}
-	simple_util.CheckErr(outputXlsx.Save(*output))
+	simple_util.CheckErr(outputXlsx.SaveAs(*output))
 }
 
-func filterSheet(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, inGene map[string]bool) error {
-	outputSheet, err := outputXlsx.AddSheet(sheetName)
+func filterSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, inGene map[string]bool) {
+	rows, err := inputXlsx.GetRows(sheetName)
 	simple_util.CheckErr(err)
 
-	nrow := len(sheet.Rows)
+	nrow := len(rows)
 	if nrow < 1 {
-		return errors.New("error sheet")
+		return
 	}
 
+	outputXlsx.NewSheet(sheetName)
 	var keysList []string
-	var outputRow = outputSheet.AddRow()
-	for _, cell := range sheet.Rows[0].Cells {
-		text, _ := cell.FormattedValue()
-		keysList = append(keysList, strings.Split(text, "*(")[0])
-		outputRow.AddCell().SetString(text)
+	outputRow := 1
+	for j, cell := range rows[0] {
+		text := strings.Split(cell, "*(")[0]
+		keysList = append(keysList, text)
+		axis, _ := excelize.CoordinatesToCellName(j+1, outputRow)
+		outputXlsx.SetCellValue(sheetName, axis, cell)
 	}
+	outputRow++
+
 	if nrow > 1 {
 		for i := 1; i < nrow; i++ {
 			var item = make(map[string]string)
-			row := sheet.Rows[i]
-			for j, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				item[keysList[j]] = text
+			row := rows[i]
+			for j, cell := range row {
+				if j < len(keysList) {
+					item[keysList[j]] = cell
+				}
 			}
 			gene := item["Gene Symbol"]
 			if inGene[gene] {
-				var outputRow = outputSheet.AddRow()
-				for _, key := range keysList {
-					outputRow.AddCell().SetString(item[key])
+				for j, key := range keysList {
+					axis, _ := excelize.CoordinatesToCellName(j+1, outputRow)
+					outputXlsx.SetCellValue(sheetName, axis, item[key])
 				}
+				outputRow++
 			}
 		}
 	}
-	return nil
 }

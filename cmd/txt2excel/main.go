@@ -8,8 +8,7 @@ import (
 
 	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/liserjrqlxue/goUtil/textUtil"
-	"github.com/liserjrqlxue/goUtil/xlsxUtil"
-	"github.com/tealeg/xlsx/v3"
+	"github.com/xuri/excelize/v2"
 )
 
 var (
@@ -62,10 +61,16 @@ func main() {
 	if len(sheetNamesMap) != len(sheetNames) || len(sheetNames) != len(inputList) {
 		panic("sheetNames error!")
 	}
-	var excel = xlsx.NewFile()
+	var excel = excelize.NewFile()
 	for i := range inputList {
-		var sheet = xlsxUtil.AddSheet(excel, sheetNames[i])
-		xlsxUtil.AddSlice2Sheet(textUtil.File2Slice(inputList[i], *sep), sheet)
+		excel.NewSheet(sheetNames[i])
+		slice := textUtil.File2Slice(inputList[i], *sep)
+		for rowIdx, row := range slice {
+			for colIdx, cell := range row {
+				axis, _ := excelize.CoordinatesToCellName(colIdx+1, rowIdx+1)
+				excel.SetCellValue(sheetNames[i], axis, cell)
+			}
+		}
 	}
-	simpleUtil.CheckErr(excel.Save(*output + ".xlsx"))
+	simpleUtil.CheckErr(excel.SaveAs(*output + ".xlsx"))
 }

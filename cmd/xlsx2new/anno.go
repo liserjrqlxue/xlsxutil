@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/liserjrqlxue/anno2xlsx/v2/anno"
 	"github.com/liserjrqlxue/annogo/GnomAD"
 	"github.com/liserjrqlxue/simple-util"
-	"github.com/tealeg/xlsx"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -28,57 +26,64 @@ func getJson(url string, target interface{}) error {
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
-// anno cnv
-func annoExonCnv(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string, anno bool) error {
-	outputSheet, err := outputXlsx.AddSheet(sheetName)
+func annoExonCnv(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, annoFlag bool) {
+	rows, err := inputXlsx.GetRows(sheetName)
 	simple_util.CheckErr(err)
+
+	nrow := len(rows)
+	if nrow < 1 {
+		return
+	}
+
+	outputXlsx.NewSheet(sheetName)
 	var keysList []string
 	var keysHash = make(map[string]bool)
-	for i, row := range sheet.Rows {
-		var outputRow = outputSheet.AddRow()
-		if i == 0 {
-			for _, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				key := strings.Split(text, "(")[0]
-				keysList = append(keysList, key)
-				keysHash[key] = true
-			}
-			// change CopyNum to Copy_Num
-			if !keysHash["Copy_Num"] && keysHash["CopyNum"] {
-				keysHash["Copy_Num"] = true
-				for i, title := range keysList {
-					if title == "CopyNum" {
-						keysList[i] = "Copy_Num"
-					}
-				}
-			}
-			for _, title := range exonCnvAdd {
-				if !keysHash[title] {
-					keysList = append(keysList, title)
-				}
-			}
-			for _, title := range keysList {
-				outputCell := outputRow.AddCell()
-				outputCell.SetString(title)
-			}
-		} else {
-			var dataHash = make(map[string]string)
-			for j, cell := range row.Cells {
-				text, _ := cell.FormattedValue()
-				dataHash[keysList[j]] = text
-			}
 
-			if anno {
-				dataHash = updateExonCnv(dataHash)
-			}
+	for j, cell := range rows[0] {
+		key := strings.Split(cell, "(")[0]
+		keysList = append(keysList, key)
+		keysHash[key] = true
+		axis, _ := excelize.CoordinatesToCellName(j+1, 1)
+		outputXlsx.SetCellValue(sheetName, axis, cell)
+	}
 
-			for _, title := range keysList {
-				outputCell := outputRow.AddCell()
-				outputCell.SetString(dataHash[title])
+	if !keysHash["Copy_Num"] && keysHash["CopyNum"] {
+		keysHash["Copy_Num"] = true
+		for i, title := range keysList {
+			if title == "CopyNum" {
+				keysList[i] = "Copy_Num"
 			}
 		}
 	}
-	return nil
+
+	for _, title := range exonCnvAdd {
+		if !keysHash[title] {
+			keysList = append(keysList, title)
+			axis, _ := excelize.CoordinatesToCellName(len(keysList), 1)
+			outputXlsx.SetCellValue(sheetName, axis, title)
+		}
+	}
+
+	if nrow > 1 {
+		for i := 1; i < nrow; i++ {
+			var dataHash = make(map[string]string)
+			row := rows[i]
+			for j, cell := range row {
+				if j < len(keysList) {
+					dataHash[keysList[j]] = cell
+				}
+			}
+
+			if annoFlag {
+				dataHash = updateExonCnv(dataHash)
+			}
+
+			for j, title := range keysList {
+				axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+				outputXlsx.SetCellValue(sheetName, axis, dataHash[title])
+			}
+		}
+	}
 }
 
 func updateExonCnv(dataHash map[string]string) map[string]string {
@@ -116,28 +121,26 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 
 type empty interface{}
 
-// anno snv
-func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender string, titleList []string) error {
-
-	outputSheet, err := outputXlsx.AddSheet(sheetName)
+func annoSheet3(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName, gender string, titleList []string) error {
+	rows, err := inputXlsx.GetRows(sheetName)
 	simple_util.CheckErr(err)
 
-	nrow := len(sheet.Rows)
+	nrow := len(rows)
 	if nrow < 1 {
-		return errors.New("empty sheet")
+		return fmt.Errorf("empty sheet")
 	}
 
-	// title
+	outputXlsx.NewSheet(sheetName)
 	var keysList []string
-	var outputRow = outputSheet.AddRow()
-	for _, cell := range sheet.Rows[0].Cells {
-		text, _ := cell.FormattedValue()
-		keysList = append(keysList, strings.Split(text, "(")[0])
+
+	for _, cell := range rows[0] {
+		text := strings.Split(cell, "(")[0]
+		keysList = append(keysList, text)
 	}
-	for _, title := range titleList {
-		//axis := positionToAxis(i, j)
-		outputCell := outputRow.AddCell()
-		outputCell.SetString(title)
+
+	for j, title := range titleList {
+		axis, _ := excelize.CoordinatesToCellName(j+1, 1)
+		outputXlsx.SetCellValue(sheetName, axis, title)
 	}
 
 	if nrow > 1 {
@@ -146,17 +149,18 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender strin
 		for i := 1; i < nrow; i++ {
 			go func(i int) {
 				var dataHash = make(map[string]string)
-				row := sheet.Rows[i]
-				for j, cell := range row.Cells {
-					text, _ := cell.FormattedValue()
-					dataHash[keysList[j]] = text
+				row := rows[i]
+				for j, cell := range row {
+					if j < len(keysList) {
+						dataHash[keysList[j]] = cell
+					}
 				}
 				if *annoGnomAD {
 					dataHash = addGnomAD(tbx, dataHash)
 				}
 				geneSymbol := dataHash["Gene Symbol"]
 				dataHash["突变频谱"] = geneDb[geneSymbol]
-				// add acmg
+
 				if acmgDb[geneSymbol] != nil {
 					acmgDbGene := acmgDb[geneSymbol]
 					var sep = "\n"
@@ -189,12 +193,10 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender strin
 					dataHash["SystemSort"] = strings.Join(systemSort, sep)
 				}
 
-				// 自动化判断
 				if *annoACMG {
 					acmg2015.AddEvidences(dataHash)
 					dataHash["ACMG"] = acmg2015.PredACMG2015(dataHash, true)
 				}
-				//dataHash = updateSnv(dataHash)
 				anno.UpdateSnv(dataHash, gender)
 				dataHashArray[i-1] = dataHash
 				sem <- new(empty)
@@ -204,18 +206,11 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender strin
 			<-sem
 		}
 		for i := 0; i < nrow-1; i++ {
-			var outputRow = outputSheet.AddRow()
 			dataHash := dataHashArray[i]
-			for _, title := range titleList {
-				outputCell := outputRow.AddCell()
-				outputCell.SetString(dataHash[title])
+			for j, title := range titleList {
+				axis, _ := excelize.CoordinatesToCellName(j+1, i+2)
+				outputXlsx.SetCellValue(sheetName, axis, dataHash[title])
 			}
-		}
-	}
-	// column hidden
-	for i, col := range outputSheet.Cols {
-		if i >= 78 {
-			col.Hidden = true
 		}
 	}
 	fmt.Printf("anno %d count\n", nrow)
@@ -223,8 +218,6 @@ func annoSheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName, gender strin
 }
 
 func updateSnv(dataHash map[string]string) map[string]string {
-
-	// pHGVS= pHGVS1+"|"+pHGVS3
 	dataHash["pHGVS"] = dataHash["pHGVS1"] + " | " + dataHash["pHGVS3"]
 
 	score, err := strconv.ParseFloat(dataHash["dbscSNV_ADA_SCORE"], 32)
@@ -259,7 +252,6 @@ func updateSnv(dataHash map[string]string) map[string]string {
 		}
 	}
 
-	// 0-0.6 不保守  0.6-2.5 保守 ＞2.5 高度保守
 	score, err = strconv.ParseFloat(dataHash["PhyloP Vertebrates"], 32)
 	if err != nil {
 		dataHash["PhyloP Vertebrates Pred"] = dataHash["PhyloP Vertebrates"]
@@ -300,7 +292,7 @@ func updateSnv(dataHash map[string]string) map[string]string {
 
 	dataHash["GnomAD homo"] = dataHash["GnomAD HomoAlt Count"]
 	dataHash["GnomAD hemi"] = dataHash["GnomAD HemiAlt Count"]
-	dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"] // + "|" + dataHash["GnomAD HemiAlt Count"]
+	dataHash["纯合，半合"] = dataHash["GnomAD HomoAlt Count"]
 	if len(strings.Split(dataHash["MutationName"], ":")) > 1 {
 		dataHash["MutationNameLite"] = dataHash["Transcript"] + ":" + strings.Split(dataHash["MutationName"], ":")[1]
 	} else {
@@ -309,7 +301,6 @@ func updateSnv(dataHash map[string]string) map[string]string {
 
 	dataHash["历史样本检出个数"] = dataHash["sampleMut"] + "/" + dataHash["sampleAll"]
 
-	// remove index
 	for _, k := range [2]string{"GeneralizationEN", "GeneralizationCH"} {
 		sep := "\n\n"
 		keys := strings.Split(dataHash[k], sep)
@@ -323,47 +314,16 @@ func updateSnv(dataHash map[string]string) map[string]string {
 	return dataHash
 }
 
-// copy sheet without change
-func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) error {
+func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
 	inputRows, err := inputXlsx.GetRows(sheetName)
 	simple_util.CheckErr(err)
 	outputXlsx.NewSheet(sheetName)
 	for i, row := range inputRows {
 		for j, cell := range row {
-			axis := positionToAxis(i, j)
+			axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
 			outputXlsx.SetCellValue(sheetName, axis, cell)
 		}
 	}
-	return nil
-}
-func copySheet2(sheet *xlsx.Sheet, outputXlsx *excelize.File, sheetName string) error {
-	outputXlsx.NewSheet(sheetName)
-	for i, row := range sheet.Rows {
-		for j, cell := range row.Cells {
-			text, _ := cell.FormattedValue()
-			axis := positionToAxis(i, j)
-			outputXlsx.SetCellValue(sheetName, axis, text)
-		}
-	}
-	return nil
-}
-func copySheet3(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
-	_, err := outputXlsx.AppendSheet(sheet, sheetName)
-	simple_util.CheckErr(err)
-	return err
-}
-func copySheet4(sheet xlsx.Sheet, outputXlsx *xlsx.File, sheetName string) error {
-	outputSheet, err := outputXlsx.AddSheet(sheetName)
-	simple_util.CheckErr(err)
-	for _, row := range sheet.Rows {
-		var outputRow = outputSheet.AddRow()
-		for _, cell := range row.Cells {
-			text, _ := cell.FormattedValue()
-			outputCell := outputRow.AddCell()
-			outputCell.SetString(text)
-		}
-	}
-	return err
 }
 
 func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string {
@@ -377,7 +337,9 @@ func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string 
 		} else {
 			var dataHash = make(map[string]string)
 			for j, cell := range row {
-				dataHash[title[j]] = cell
+				if j < len(title) {
+					dataHash[title[j]] = cell
+				}
 			}
 			mapArray = append(mapArray, dataHash)
 		}
@@ -396,7 +358,9 @@ func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[s
 		} else {
 			var dataHash = make(map[string]string)
 			for j, cell := range row {
-				dataHash[title[j]] = cell
+				if j < len(title) {
+					dataHash[title[j]] = cell
+				}
 			}
 			mapHash[dataHash[key]] = dataHash
 		}
@@ -417,7 +381,9 @@ func excel2MapMap(excelPath, sheetName, key string) map[string]map[string]string
 		} else {
 			var dataHash = make(map[string]string)
 			for j, cell := range row {
-				dataHash[title[j]] = cell
+				if j < len(title) {
+					dataHash[title[j]] = cell
+				}
 			}
 			db[dataHash[key]] = dataHash
 		}
@@ -466,6 +432,4 @@ func addGnomAD(tbx *GnomAD.Tbx, inputData map[string]string) map[string]string {
 	inputData["GnomAD HomoAlt Count"] = strconv.Itoa(hit.Info["nhomalt"].(int))
 	inputData["GnomAD EAS HomoAlt Count"] = strconv.Itoa(hit.Info["nhomalt"].(int))
 	return inputData
-	//fmt.Println(chr,"\t",start,"\t",stop,"\t",ref,"\t",alt,"\t:\t",hit.Info["AF"],hit.Info["AF_eas"])
-	//fmt.Println(hit)//.Chrom,hit.Start,hit.End,hit.Ref,hit.Alt)
 }
