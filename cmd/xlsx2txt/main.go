@@ -94,7 +94,7 @@ func main() {
 		}
 	}
 
-	xlsxF := simpleUtil.HandleError(excelize.OpenFile(inputFile)).(*excelize.File)
+	xlsxF := simpleUtil.HandleError(excelize.OpenFile(inputFile))
 	allSheets := xlsxF.GetSheetList()
 
 	for _, sheetName := range allSheets {
@@ -102,7 +102,7 @@ func main() {
 			continue
 		}
 		var w = osUtil.Create(outputPrefix + "." + sheetName + ".txt")
-		var rows = simpleUtil.HandleError(xlsxF.GetRows(sheetName)).([][]string)
+		var rows = simpleUtil.HandleError(xlsxF.GetRows(sheetName))
 		for _, row := range rows {
 			var rowV []string
 			for _, cell := range row {

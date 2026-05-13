@@ -6,7 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	"github.com/liserjrqlxue/goUtil/textUtil"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -43,12 +44,12 @@ func main() {
 	if *output == "" {
 		*output = *input + ".filter.xlsx"
 	}
-	for _, gene := range simple_util.File2Array(*geneList) {
+	for _, gene := range textUtil.File2Array(*geneList) {
 		inGene[gene] = true
 	}
 
 	inputXlsx, err := excelize.OpenFile(*input)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	outputXlsx := excelize.NewFile()
 	for _, sheet := range inputXlsx.GetSheetList() {
 		switch sheet {
@@ -57,12 +58,12 @@ func main() {
 		default:
 		}
 	}
-	simple_util.CheckErr(outputXlsx.SaveAs(*output))
+	simpleUtil.CheckErr(outputXlsx.SaveAs(*output))
 }
 
 func filterSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, inGene map[string]bool) {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	nrow := len(rows)
 	if nrow < 1 {

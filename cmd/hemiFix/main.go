@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -40,17 +40,17 @@ func main() {
 		*output = *input + ".fixHemi.xlsx"
 	}
 	inputXlsx, err := excelize.OpenFile(*input)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	outputXlsx := excelize.NewFile()
 	for _, sheetName := range inputXlsx.GetSheetList() {
 		updateSheet(inputXlsx, outputXlsx, sheetName, *gender)
 	}
-	simple_util.CheckErr(outputXlsx.SaveAs(*output))
+	simpleUtil.CheckErr(outputXlsx.SaveAs(*output))
 }
 
 func updateSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName, gender string) {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	nrow := len(rows)
 	if nrow < 3 {
@@ -105,9 +105,9 @@ func updateHemi(item map[string]string, gender string) {
 	chr := item["染色体号"]
 	if isChrXY.MatchString(chr) && isMale.MatchString(gender) {
 		start, err := strconv.Atoi(item["起始位置"])
-		simple_util.CheckErr(err)
+		simpleUtil.CheckErr(err)
 		stop, err := strconv.Atoi(item["终止位置"])
-		simple_util.CheckErr(err)
+		simpleUtil.CheckErr(err)
 		if !inPAR(chr, start, stop) && withHom.MatchString(item[zygosityKey]) {
 			zygosity := strings.Split(item[zygosityKey], ";")
 			genders := strings.Split(gender, ",")

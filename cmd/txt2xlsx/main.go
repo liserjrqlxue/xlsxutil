@@ -5,7 +5,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	"github.com/liserjrqlxue/goUtil/textUtil"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -68,7 +69,7 @@ func main() {
 	outputXlsx := excelize.NewFile()
 	outputXlsx.NewSheet(*sheetName)
 
-	dataArray, titleList := simple_util.File2MapArray(*inputData, *sep, nil)
+	dataArray, titleList := textUtil.File2MapArray(*inputData, *sep, nil)
 
 	for j, title := range titleList {
 		axis, _ := excelize.CoordinatesToCellName(j+1, 1)
@@ -86,5 +87,5 @@ func main() {
 	}
 
 	err := outputXlsx.SaveAs(*outputExcel)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/liserjrqlxue/acmg2015"
 	"github.com/liserjrqlxue/anno2xlsx/v2/anno"
 	"github.com/liserjrqlxue/annogo/GnomAD"
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -20,15 +20,15 @@ var (
 
 func getJson(url string, target interface{}) error {
 	r, err := myClient.Get(url)
-	simple_util.CheckErr(err)
-	defer simple_util.DeferClose(r.Body)
+	simpleUtil.CheckErr(err)
+	defer simpleUtil.DeferClose(r.Body)
 
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
 func annoExonCnv(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, annoFlag bool) {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	nrow := len(rows)
 	if nrow < 1 {
@@ -97,7 +97,7 @@ func updateExonCnv(dataHash map[string]string) map[string]string {
 			continue
 		}
 		err := getJson(host+"/OMIM_CN?query="+gene, &diseaseInfo)
-		simple_util.CheckErr(err)
+		simpleUtil.CheckErr(err)
 		disInfo, ok := diseaseInfo.([]interface{})
 		if ok && len(disInfo) == 11 {
 			for i, k := range exonCnvAdd {
@@ -123,7 +123,7 @@ type empty interface{}
 
 func annoSheet3(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName, gender string, titleList []string) error {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	nrow := len(rows)
 	if nrow < 1 {
@@ -316,7 +316,7 @@ func updateSnv(dataHash map[string]string) map[string]string {
 
 func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
 	inputRows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	outputXlsx.NewSheet(sheetName)
 	for i, row := range inputRows {
 		for j, cell := range row {
@@ -328,7 +328,7 @@ func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
 
 func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string {
 	rows, err := excel.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var mapArray []map[string]string
 	var title []string
 	for i, row := range rows {
@@ -349,7 +349,7 @@ func sheet2mapArray(excel *excelize.File, sheetName string) []map[string]string 
 
 func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[string]string {
 	rows, err := excel.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var mapHash = make(map[string]map[string]string)
 	var title []string
 	for i, row := range rows {
@@ -370,10 +370,10 @@ func sheet2mapHash(excel *excelize.File, sheetName, key string) map[string]map[s
 
 func excel2MapMap(excelPath, sheetName, key string) map[string]map[string]string {
 	inXlsx, err := excelize.OpenFile(excelPath)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var db = make(map[string]map[string]string)
 	rows, err := inXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var title []string
 	for i, row := range rows {
 		if i == 0 {
@@ -395,7 +395,7 @@ func addGnomAD(tbx *GnomAD.Tbx, inputData map[string]string) map[string]string {
 	chr := inputData["#Chr"]
 	chr = chrPrefix.ReplaceAllString(chr, "")
 	start, err := strconv.Atoi(inputData["Start"])
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	stop, err := strconv.Atoi(inputData["Stop"])
 	qStart := start
 	if start == stop {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -59,10 +59,10 @@ func main() {
 	}
 
 	geneXlsx, err := excelize.OpenFile(*genelist)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var inGeneList = make(map[string]bool)
 	rows, err := geneXlsx.GetRows(*geneSheet)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	for _, row := range rows {
 		if len(row) > 0 {
 			inGeneList[row[0]] = true
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	inputXlsx, err := excelize.OpenFile(*input)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	outputXlsx := excelize.NewFile()
 
@@ -81,12 +81,12 @@ func main() {
 			copySheet(inputXlsx, outputXlsx, sheetName)
 		}
 	}
-	simple_util.CheckErr(outputXlsx.SaveAs(*output))
+	simpleUtil.CheckErr(outputXlsx.SaveAs(*output))
 }
 
 func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	outputXlsx.NewSheet(sheetName)
 	for i, row := range rows {
 		for j, cell := range row {
@@ -98,7 +98,7 @@ func copySheet(inputXlsx, outputXlsx *excelize.File, sheetName string) {
 
 func updateSheet(inputXlsx *excelize.File, outputXlsx *excelize.File, sheetName string, inGeneList map[string]bool) {
 	rows, err := inputXlsx.GetRows(sheetName)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	nrow := len(rows)
 	if nrow < 1 {

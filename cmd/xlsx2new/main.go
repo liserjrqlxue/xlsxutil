@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/liserjrqlxue/annogo/GnomAD"
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	simple_util "github.com/liserjrqlxue/simple-util"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -183,11 +184,11 @@ func main() {
 	}
 
 	inputXlsx, err := excelize.OpenFile(*inputExcel)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 
 	if *annoGnomAD {
 		tbx, err = GnomAD.New(*gnomAD)
-		simple_util.CheckErr(err)
+		simpleUtil.CheckErr(err)
 		defer simple_util.DeferClose(tbx)
 	}
 
@@ -196,7 +197,7 @@ func main() {
 	acmgDb = excel2MapMap(*acmgExcel, *acmgSheet, "Gene/Locus")
 
 	geneDiseaseDbXlsx, err := excelize.OpenFile(*geneDiseaseDbExcel)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	geneDiseaseDb := sheet2mapArray(geneDiseaseDbXlsx, *geneDiseaseSheet)
 	for _, db := range geneDiseaseDb {
 		gene := db["Gene/Locus"]
@@ -205,9 +206,9 @@ func main() {
 	}
 
 	geneDbXlsx, err := excelize.OpenFile(*geneDbExcel)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	geneDbRows, err := geneDbXlsx.GetRows(*geneDbSheet)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	var geneDbTitle []string
 
 	for i, row := range geneDbRows {
@@ -237,7 +238,7 @@ func main() {
 			err = annoSheet3(inputXlsx, outputXlsx, sheetName, *gender, titleList)
 			t1 := time.Now()
 			fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
-			simple_util.CheckErr(err)
+			simpleUtil.CheckErr(err)
 		} else if sheetName == "exon_cnv" {
 			annoExonCnv(inputXlsx, outputXlsx, sheetName, *annoCnv)
 		} else {
@@ -247,6 +248,6 @@ func main() {
 	t1 := time.Now()
 	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 	err = outputXlsx.SaveAs(*outputExcel)
-	simple_util.CheckErr(err)
+	simpleUtil.CheckErr(err)
 	fmt.Printf("The call took %v to run.\n", t1.Sub(t0))
 }

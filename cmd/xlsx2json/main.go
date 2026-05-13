@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/liserjrqlxue/simple-util"
+	"github.com/liserjrqlxue/goUtil/jsonUtil"
+	"github.com/liserjrqlxue/goUtil/simpleUtil"
+	simple_util "github.com/liserjrqlxue/simple-util"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -63,26 +65,26 @@ func main() {
 
 	if *sheet == "" {
 		xlsxFh, err := excelize.OpenFile(*xlsx)
-		simple_util.CheckErr(err)
+		simpleUtil.CheckErr(err)
 		for _, sheetName := range xlsxFh.GetSheetMap() {
 			fileName := *prefix + "." + sheetName + ".json"
 			rows, err := xlsxFh.GetRows(sheetName)
-			simple_util.CheckErr(err)
+			simpleUtil.CheckErr(err)
 			var d []byte
 			if *key == "" {
-				_, data := simple_util.Slice2MapArray(rows)
+				_, data := simpleUtil.Slice2MapArray(rows)
 				d, err = json.MarshalIndent(data, "", "  ")
-				simple_util.CheckErr(err)
+				simpleUtil.CheckErr(err)
 			} else {
 				_, data := simple_util.Slice2MapMapMergeTrim(rows, *key, *sep)
 				d, err = json.MarshalIndent(data, "", "  ")
-				simple_util.CheckErr(err)
+				simpleUtil.CheckErr(err)
 			}
 			if *aes {
 				simple_util.Encode2file(fileName+".aes", d, []byte(*codeKey))
 			} else {
-				err = simple_util.Json2file(d, fileName)
-				simple_util.CheckErr(err)
+				err = jsonUtil.Json2file(d, fileName)
+				simpleUtil.CheckErr(err)
 			}
 		}
 	} else {
@@ -91,17 +93,17 @@ func main() {
 		if *key == "" {
 			_, data := simple_util.Sheet2MapArray(*xlsx, *sheet)
 			d, err = json.MarshalIndent(data, "", "  ")
-			simple_util.CheckErr(err)
+			simpleUtil.CheckErr(err)
 		} else {
 			_, data := simple_util.Sheet2MapMapMergeTrim(*xlsx, *sheet, *key, *sep)
 			d, err = json.MarshalIndent(data, "", "  ")
-			simple_util.CheckErr(err)
+			simpleUtil.CheckErr(err)
 		}
 		if *aes {
 			simple_util.Encode2file(fileName+".aes", d, []byte(*codeKey))
 		} else {
 			err = simple_util.Json2file(d, fileName)
-			simple_util.CheckErr(err)
+			simpleUtil.CheckErr(err)
 		}
 	}
 }
